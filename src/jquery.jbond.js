@@ -135,8 +135,128 @@ var jbond = (function($){
     });
     RuleParser.prototype.constructor = RuleParser;
 
+    /**
+     * Parse DOM tree to create JSON data
+     */
+    function TreeParser(options) {
+        this.options = $.extend({
+            namespace: 'rule',
+            RuleParser: RuleParser,
+        }, options);
+        this.guide = new this.options.RuleParser({validate:false});
+    }
+    TreeParser.prototype.constructor = TreeParser
+
+    TreeParser.prototype.guess = function($el) {
+        if ($el.is('[type=number]')) {
+            return 'number';
+        }
+        if ($el.is('table,tbody,ul')) {
+            return 'array';
+        }
+        return 'string';
+    }
+
+    TreeParser.prototype.visitNull = function($el, bind) {
+        return null;
+    }
+
+    TreeParser.prototype.visitBoolean = function($el, bind) {
+        if (bind=='default') {
+            if ($el.is('input[type=checkbox]')) {
+                return $el.is(':checked');
+            }
+            var val = $.trim($el.text()).toLowerCase();
+            return (val == 'true' || val == 't' || 0 < parseInt(val));
+        }
+        if (bind.match(/^attr=.*/)) {
+            return $el.is('[attr]'.replace('attr', bind.substr(5)))
+        }
+        return null;
+    }
+
+    TreeParser.prototype.visitNumber = function($el, bind) {
+        if ($el.is('input,select,textarea')) {
+            return parseFloat($el.val());
+        }
+        return parseFloat($el.text());
+    }
+
+    TreeParser.prototype.visitString = function($el, bind) {
+        if ($el.is('select:has(option),fieldset:has(input[type=radio])')) {
+            return $el.children(':checked').val();
+        }
+        if ($el.is('input,textarea')) {
+            return $el.val();
+        }
+        return $.trim($el.text());
+    }
+
+    TreeParser.prototype.visitArray = function($el, bind) {
+        if (bind != 'option') {
+            throw Error('invariant violation');
+        }
+        return $el.val();
+    }
+
+    TreeParser.prototype.visitObject = function($el, bind) {
+        return null;
+    }
+
+    TreeParser.prototype.traverse = function($el) {
+        var result = null;
+        var raw = $el.data(this.options.namespace);
+        if (!raw) {
+            throw new Error('dom element has to specify data-* attribute');
+        }
+
+        var rule = $.extend({type:this.guess($el), bind:'default'}, this.guide.parse(raw));
+
+        switch (rule.type) {
+        case 'null': result = this.visitNull($el, rule.bind);  break;
+        case 'boolean': result = this.visitBoolean($el, rule.bind);  break;
+        case 'number': result = this.visitNumber($el, rule.bind); break;
+        case 'string': result = this.visitString($el, rule.bind); break;
+        case 'array': {
+            if (rule.bind == 'option') {
+                result = this.visitArray($el, rule.bind);
+            }
+            else {
+                result = []
+                $el.children(':not(:first-child)').each((function(i, item){
+                    var $item = $(item);
+                    if (!$item.is(':has(*)') || $item.data(this.options.namespace)) {
+                        result.push(this.traverse($item));
+                    }
+                    else {
+                        var $el = $item.find('[data-ns]'.replace('ns', this.options.namespace));
+                        if ($el.length == 0) {
+                            throw Error('invariant violation');
+                        }
+                        result.push(this.traverse($el.first()));
+                    }
+                }).bind(this));
+            }
+            break;
+        }
+        case 'object': {
+            break;
+        }
+        default: throw Error('invariant violation'); break;
+        }
+
+        return result;
+    }
+
+    function TreeComposer(options) {
+        this.options = $.extend({
+            namespace: 'rule'
+        }, options);
+    }
+
     return {
         "RuleError": RuleError,
         "RuleParser": RuleParser,
+        "TreeParser": TreeParser,
     };
 })(jQuery);
