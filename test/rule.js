@@ -4,7 +4,7 @@ QUnit.test('rule simple test', function(assert) {
     assert.ok(rule.parse('type: boolean') != null);
     assert.ok(rule.parse('type: boolean;') != null);
     assert.ok(rule.parse('type: boolean; bind: default') != null);
-    assert.ok(rule.parse('type: object; properties:id,name  ;   bind: default,default ;') != null);
+    assert.ok(rule.parse('type: object; properties:id,name  ;   bind: default ;') != null);
     assert.throws(function(){ rule.parse('type: boolean; foobar;'); }, jbond.RuleError);
     assert.throws(function(){ rule.parse('type: boolean; ;'); }, jbond.RuleError);
 });
@@ -38,8 +38,13 @@ QUnit.test('rule type test', function(assert) {
         'wrong type for provider rule'
     );
     assert.propEqual(
+        rule.parse('type:array; items:number'),
+        {type: 'array', items: {type: 'number'}},
+        'wrong type for provider rule'
+    );
+    assert.propEqual(
         rule.parse('type:object; properties:id'),
-        {type: 'object', properties: ['id']},
+        {type: 'object', properties: {id: {bind_id: 0}}},
         'wrong type for provider rule'
     );
     assert.throws(
@@ -51,6 +56,53 @@ QUnit.test('rule type test', function(assert) {
         function(){ rule.parse('type:object'); },
         jbond.RuleError,
         'rule definition for object type should include properties list'
+    );
+});
+
+QUnit.test('rule items and properties test', function(assert) {
+    var rule = new jbond.RuleParser({validate: true});
+
+    assert.propEqual(
+        rule.parse('type:array; items:number; bind:options'),
+        {type: 'array', items: {type: 'number'}, bind: 'options'},
+        'wrong items type for provided rule'
+    );
+    assert.propEqual(
+        rule.parse('type:array; bind:options'),
+        {type: 'array', bind: 'options'},
+        'wrong items type for provided rule'
+    );
+    assert.throws(
+        function() {
+            rule.parse('type:array; items:wrongtype; bind:options');
+        },
+        jbond.RuleError,
+        'wrong items type for provided bind method'
+    );
+    assert.propEqual(
+        rule.parse('type:object; properties:id,value; bind:default'),
+        {
+            type: 'object',
+            properties: {id: {bind_id: 0}, value: {bind_id: 1}},
+            bind: 'default'
+        },
+        'wrong propetries for provided rule'
+    );
+    assert.propEqual(
+        rule.parse('type:object; properties:value=number,label; bind:content'),
+        {
+            type: 'object',
+            properties: {value: {type: 'number', bind: 'attr=value'}, label: {bind_id: 0}},
+            bind: 'content'
+        },
+        'wrong propetries for provided rule'
+    );
+    assert.throws(
+        function() {
+            rule.parse('type:object; properties:id=unknowntype,label; bind:content');
+        },
+        jbond.RuleError,
+        'wrong property type provided rule'
     );
 });
 
@@ -75,21 +127,34 @@ QUnit.test('rule bind test', function(assert) {
         'wrong bind method for provided rule'
     );
     assert.propEqual(
-        rule.parse('type:array; bind:option'),
-        {type: 'array', bind: 'option'},
+        rule.parse('type:array; bind:options'),
+        {type: 'array', bind: 'options'},
         'wrong bind method for provided rule'
     );
     assert.propEqual(
-        rule.parse('type:object; properties:id,name; bind:attr=title,default'),
-        {type: 'object', properties:['id','name'], bind: ['attr=title','default']},
+        rule.parse('type:object; properties:id=number,name; bind:default'),
+        {
+            type: 'object',
+            properties: {id: {type: 'number', bind: 'attr=id'}, name: {bind_id: 0}},
+            bind: 'default'
+        },
+        'wrong bind method for provided rule'
+    );
+    assert.propEqual(
+        rule.parse('type:object; properties:id,name; bind:content'),
+        {
+            type: 'object',
+            properties: {id: {bind_id: 0}, name: {bind_id: 1}},
+            bind: 'content'
+        },
         'wrong bind method for provided rule'
     );
     assert.throws(
         function() {
-            rule.parse('type:object; properties:id,label,name; bind:attr=title,default');
+            rule.parse('type:object; properties:id,label,name; bind:attr');
         },
         jbond.RuleError,
-        'wrong number of bind methods for provided amount of properties'
+        'wrong bind method'
     );
 });
 

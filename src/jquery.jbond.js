@@ -18,11 +18,11 @@ var jbond = (function($){
      *
      * Examples:
      * type:null
-     * type:boolean
-     * type:number; bind:default|attr=<attr_name>
-     * type:string; bind:default|attr=<attr_name>
-     * type:array; bind:default|option
-     * type:object; properties:id,name,tags; bind:default|attr=<attr1_name>,default,default
+     * type:boolean; bind:[default|attr=<attr_name>]
+     * type:number; bind:[default|attr=<attr_name>]
+     * type:string; bind:[default|attr=<attr_name>]
+     * type:array; bind:[default|options]; (?items:<type>)
+     * type:object; properties:id(?=<type>),name,tags; bind:[default|content]
      */
     function RuleParser(options) {
         this.options = $.extend({
@@ -43,8 +43,9 @@ var jbond = (function($){
                 var name = param[0].trim(), value = param[1].trim();
                 switch(name) {
                     case 'type': rule.type = value; break;
+                    case 'bind': rule.bind = value; break;
+                    case 'items': rule.items = {'type': value}; break;
                     case 'properties': rule.properties = self.parseProperties(value); break;
-                    case 'bind': rule.bind = self.parseBind(value); break;
                     default: {
                         if (name.length) {
                             throw RuleError('unknown rule parameter: ' + name);
@@ -57,37 +58,25 @@ var jbond = (function($){
             return rule;
         },
 
-        parseBind: function(spec) {
-            var self = this, parameters = spec.split(','), bindings = [];
-            $.each(parameters, function(i, item){
-                var param = item.trim();
-                if (!param.length) {
-                    return;
-                }
-                bindings.push(param);
-            });
-            if (!bindings.length) {
-                throw new RuleError('bind list is empty');
-            }
-            else if (bindings.length==1) {
-                return bindings[0];
-            }
-            else {
-                return bindings;
-            }
-        },
-
         parseProperties: function(spec) {
-            var self = this, parameters = spec.split(','), properties = [];
+            var self = this, parameters = spec.split(','), index = 0, properties = {};
             $.each(parameters, function(i, item){
                 var property = item.trim();
                 if (property.length>0) {
-                    properties.push(property);
+                    var prop_params = property.split('=');
+                    var prop_name = prop_params[0].trim();
+                    if (prop_params.length>1) {
+                        properties[prop_name] = {
+                            'type': prop_params[1].trim(),
+                            'bind': 'attr='+prop_name
+                        };
+                    }
+                    else {
+                        properties[prop_name] = {'bind_id': index};
+                        index = index + 1;
+                    }
                 }
             });
-            if (!properties.length) {
-                throw new RuleError('properties list is empty');
-            }
             return properties;
         },
 
@@ -95,21 +84,25 @@ var jbond = (function($){
             if (!this.options.validate) {
                 return;
             }
-            if (!rule.type.match(/^(null|boolean|number|string|array|object)$/)) {
+
+            var type_re = /^(null|boolean|number|string|array|object)$/;
+
+            if (!rule.type.match(type_re)) {
                 throw new RuleError('unknow type: ' + rule.type);
             }
             if (rule.bind) {
-                var re = /^(default|attr=[a-z]+[a-z0-9_]*|option)$/;
-                $.each($.isArray(rule.bind) ? rule.bind : [rule.bind], function(i, bind) {
-                    if (!bind.match(re)) {
-                        throw new RuleError('wrong bind method ' + bind);
-                    }
-                });
+                if (!rule.bind.match(/^(default|attr=[a-z]+[a-z0-9_]*|options|content)$/)) {
+                    throw new RuleError('wrong bind method ' + rule.bind);
+                }
             }
             if (rule.type == 'array' && rule.bind) {
-                var re = /^(default|option)$/;
-                if ($.isArray(rule.bind) || !rule.bind.match(re)) {
+                if (!rule.bind.match(/^(default|options)$/)) {
                     throw new RuleError('bind method not allowed');
+                }
+            }
+            if (rule.type == 'array' && rule.items) {
+                if (!rule.items.type || !rule.items.type.match(type_re)) {
+                    throw new RuleError('wrong items type: ' + rule.items.type);
                 }
             }
             if (rule.type == 'object') {
@@ -117,19 +110,21 @@ var jbond = (function($){
                     throw new RuleError('missing parameter "properties" is required for type object');
                 }
                 else {
-                    var re = /^[a-z][a-z0-9_\-]*$/;
-                    $.each(rule.properties, function(i, property) {
-                        if (!property.match(re)) {
-                            throw new RuleError('wrong object property name: ' + property);
+                    for (var name in rule.properties) {
+                        if (!name.match(/^[a-z][a-z0-9_\-]*$/)) {
+                            throw new RuleError('wrong object property name: ' + name);
                         }
-                    });
+                        if (rule.properties[name]) {
+                            var property = rule.properties[name];
+                            if (property.type && !property.type.match(type_re)) {
+                                throw new RuleError('wrong property type: ' + property.type);
+                            }
+                        }
+                    }
                 }
-                if ($.isArray(rule.bind) && (rule.properties.length != rule.bind.length)) {
-                    throw new RuleError('wrong number of bind methods for provided amount of properties');
+                if (rule.bind && !rule.bind.match(/^(default|content)$/)) {
+                    throw new RuleError('bind method not allowed');
                 }
-            }
-            else if ($.isArray(rule.bind)) {
-                throw new RuleError('expected only one bind method');
             }
         }
     });
@@ -157,95 +152,146 @@ var jbond = (function($){
         return 'string';
     }
 
-    TreeParser.prototype.visitNull = function($el, bind) {
+    TreeParser.prototype.visitNull = function($el, schema) {
         return null;
     }
 
-    TreeParser.prototype.visitBoolean = function($el, bind) {
-        if (bind=='default') {
+    TreeParser.prototype.visitBoolean = function($el, schema) {
+        if (schema.bind.match(/^attr=.*/)) {
+            return $el.is('[attr]'.replace('attr', schema.bind.substr(5)))
+        }
+        else {
             if ($el.is('input[type=checkbox]')) {
                 return $el.is(':checked');
             }
-            var val = $.trim($el.text()).toLowerCase();
+            var val = $.trim(this.visitString($el, schema));
             return (val == 'true' || val == 't' || 0 < parseInt(val));
         }
-        if (bind.match(/^attr=.*/)) {
-            return $el.is('[attr]'.replace('attr', bind.substr(5)))
-        }
-        return null;
     }
 
-    TreeParser.prototype.visitNumber = function($el, bind) {
-        if ($el.is('input,select,textarea')) {
-            return parseFloat($el.val());
-        }
-        return parseFloat($el.text());
+    TreeParser.prototype.visitNumber = function($el, schema) {
+        return parseFloat($.trim(this.visitString($el, schema)));
     }
 
-    TreeParser.prototype.visitString = function($el, bind) {
-        if ($el.is('select:has(option),fieldset:has(input[type=radio])')) {
-            return $el.children(':checked').val();
+    TreeParser.prototype.visitString = function($el, schema) {
+        if (schema.bind.match(/^attr=.*/)) {
+            return $.trim($el.attr(schema.bind.substr(5)))
         }
-        if ($el.is('input,textarea')) {
-            return $el.val();
+        else {
+            if ($el.is('select:has(option),fieldset:has(input[type=radio])')) {
+                return $el.children(':checked').val();
+            }
+            if ($el.is('input,textarea')) {
+                return $el.val();
+            }
+            return $.trim($el.text());
         }
-        return $.trim($el.text());
     }
 
-    TreeParser.prototype.visitArray = function($el, bind) {
-        if (bind != 'option') {
+    TreeParser.prototype.visitArray = function($el, schema) {
+        if (schema.bind == 'options') {
+            var schema = $.extend({items: {type: 'string'}}, schema);
+            if ($el.is('select[multiple]')) {
+                var result = [];
+                $.each($el.val(), function(i, value){
+                    switch(schema.type) {
+                        case 'number': result.push(parseFloat(value)); break;
+                        case 'string': result.push(value); break;
+                        default: throw Error('invariant violation');
+                    }
+                });
+                return result;
+            }
             throw Error('invariant violation');
         }
-        return $el.val();
+        else {
+            var schema = $.extend(schema, {items: this.jsonschema($el.children(':first-child'))});
+            console.log(schema)
+            var result = [];
+            $el.children(':not(:first-child)').each((function(i, item){
+                result.push(this.visit($(item), schema.items));
+            }).bind(this));
+            return result;
+        }
     }
 
-    TreeParser.prototype.visitObject = function($el, bind) {
-        return null;
+    TreeParser.prototype.visitObject = function($el, schema) {
+        var result = {}, $children = $el.children();
+        for (var name in schema.properties) {
+            var property = schema.properties[name];
+            if (schema.bind == 'content') {
+                if (property.bind) {
+                    result[name] = this.visit($el, property);
+                }
+                else if (property.bind_id == 0) {
+                    result[name] = $el.text();
+                }
+            }
+            else {
+                if (property.bind && property.bind != 'default') {
+                    result[name] = this.visit($el, property);
+                }
+                else if (property.type) {
+                    result[name] = this.visit($children.eq(property.bind_id), property);
+                }
+                else {
+                    result[name] = this.traverse($children.eq(property.bind_id));
+                }
+            }
+        }
+        return result;
+    }
+
+    TreeParser.prototype.visit = function($el, schema) {
+        var result = null;
+        switch (schema.type) {
+        case 'null': result = this.visitNull($el, schema); break;
+        case 'boolean': result = this.visitBoolean($el, schema); break;
+        case 'number': result = this.visitNumber($el, schema); break;
+        case 'string': result = this.visitString($el, schema); break;
+        case 'array': result = this.visitArray($el, schema); break;
+        case 'object': result = this.visitObject($el, schema); break;
+        default: throw Error('invariant violation'); break;
+        }
+        return result;
+    }
+
+    TreeParser.prototype.jsonschema = function($el) {
+        var raw = $el.data(this.options.namespace);
+        if (!raw) {
+            throw new Error('dom element has to specify data-* attribute');
+        }
+        var schema = $.extend({type: this.guess($el), bind: 'default'}, this.guide.parse(raw));
+        if (schema.type == 'array' && schema.bind == 'default') {
+            schema.items = this.jsonschema($el.children().first());
+        }
+        if (schema.type == 'object') {
+            var $children = $el.children();
+            for (var name in schema.properties) {
+                var property = schema.properties[name];
+                if (!property.bind) {
+                    schema.properties[name] = $.extend(
+                        property,
+                        this.jsonschema($children.eq(property.bind_id))
+                    );
+                }
+                else {
+                    schema.properties[name] = $.extend({type: 'string', bind_id: 0}, property);
+                }
+            }
+        }
+
+        return schema;
     }
 
     TreeParser.prototype.traverse = function($el) {
-        var result = null;
         var raw = $el.data(this.options.namespace);
         if (!raw) {
             throw new Error('dom element has to specify data-* attribute');
         }
 
-        var rule = $.extend({type:this.guess($el), bind:'default'}, this.guide.parse(raw));
-
-        switch (rule.type) {
-        case 'null': result = this.visitNull($el, rule.bind);  break;
-        case 'boolean': result = this.visitBoolean($el, rule.bind);  break;
-        case 'number': result = this.visitNumber($el, rule.bind); break;
-        case 'string': result = this.visitString($el, rule.bind); break;
-        case 'array': {
-            if (rule.bind == 'option') {
-                result = this.visitArray($el, rule.bind);
-            }
-            else {
-                result = []
-                $el.children(':not(:first-child)').each((function(i, item){
-                    var $item = $(item);
-                    if (!$item.is(':has(*)') || $item.data(this.options.namespace)) {
-                        result.push(this.traverse($item));
-                    }
-                    else {
-                        var $el = $item.find('[data-ns]'.replace('ns', this.options.namespace));
-                        if ($el.length == 0) {
-                            throw Error('invariant violation');
-                        }
-                        result.push(this.traverse($el.first()));
-                    }
-                }).bind(this));
-            }
-            break;
-        }
-        case 'object': {
-            break;
-        }
-        default: throw Error('invariant violation'); break;
-        }
-
-        return result;
+        var schema = $.extend({type: this.guess($el), bind: 'default'}, this.guide.parse(raw));
+        return this.visit($el, schema);
     }
 
     function TreeComposer(options) {

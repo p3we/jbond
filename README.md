@@ -13,10 +13,9 @@ This tiny library let's you bind data to *HTML* structure, so you can easy retri
 | string    | default             | expect value as text or input value |
 |           | attr=*name*         | expect value as attribute |
 | array     | default             | expect elemenets as children nodes |
-|           | option@type         | expect elements as input value (option or checkbox fieldset) |
+|           | options             | expect elements as input value (option or checkbox fieldset) |
 | object    | default             | expect properties as children nodes |
-|           | option@type=*name*  | expect two properties, first as *name* attribute second as text node |
-|           | attr@type=*name*    | expect n-th property as attributes |
+|           | content             | expect at least one property, last as content, rest as attribuutes |
 
 # Example
 
@@ -25,13 +24,13 @@ This tiny library let's you bind data to *HTML* structure, so you can easy retri
   <h3 data-rule="type:string; bind:default">p3we</h3>
   <div class="form-group">
     <label>Roles</label>
-    <select data-rule="type:array; bind:option" multiple>
+    <select data-rule="type:array; items:string; bind:options" multiple>
       <option value="admin">Admin</option>
       <option value="users">Users</option>
     </select>
   </div>
   <ul data-rule="type:array; bind:default">
-    <li hidden data-rule="type:object; properties:name,nick; bind:attr=title,default">
+    <li hidden data-rule="type:object; properties:title=string,nick; bind:default">
       <p data-rule="type:string"></p>
     </li>
     <li title="Peter">
@@ -44,7 +43,7 @@ This tiny library let's you bind data to *HTML* structure, so you can easy retri
 </form>
 <div class="widget">
   <select data-rule="type:array; bind:default">
-    <option disabled hidden data-rule="type:object; properties:id,name; bind:option@number=value"></option>
+    <option disabled hidden data-rule="type:object; properties:value=number,name; bind:content"></option>
     <option value="admin">Admin</option>
     <option value="users">Users</option>
   </select>
