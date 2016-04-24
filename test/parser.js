@@ -7,7 +7,7 @@ QUnit.test('parser test for boolean', function(assert) {
     .appendTo('#qunit-fixture');
     $('<input id="simple-test-04" data-rule="type:boolean" type="checkbox" checked>')
     .appendTo('#qunit-fixture');
-    $('<span id="simple-test-05" data-rule="type:boolean;bind:attr=title" title></span>')
+    $('<span id="simple-test-05" data-rule="type:boolean;bind:attr=title" title="1"></span>')
     .appendTo('#qunit-fixture');
 
     var parser = new jbond.TreeParser();
@@ -79,7 +79,7 @@ QUnit.test('parser test for number', function(assert) {
 });
 
 QUnit.test('parser test for array', function(assert) {
-    $('<ul id="simple-test-01" data-rule="type:array"><li data-rule="type:number"></li><li>3</li></ul')
+    $('<ul id="simple-test-01" data-rule="type:array"><li data-rule="type:number"></li><li>3</li></ul>')
     .appendTo('#qunit-fixture');
     $('<ul id="simple-test-02" data-rule="type:array">' +
       '<li data-rule="type:object; properties:id=number,label; bind:content"></li>' +
@@ -118,5 +118,28 @@ QUnit.test('parser test for array', function(assert) {
     );
 });
 
+QUnit.test('parser test for object', function(assert) {
+    $('<ul id="simple-test-01" data-rule="type:object; properties:id,name">' +
+      '<li>1</li><li>FooBar</li>' +
+      '</ul>'
+    ).appendTo('#qunit-fixture');
+    $('<ul id="simple-test-02" title="2" data-rule="type:object; properties:title=number,name; bind:content">' +
+      '<li>Test</li>' +
+      '</ul>'
+    ).appendTo('#qunit-fixture');
+
+
+    var parser = new jbond.TreeParser();
+    assert.deepEqual(
+        parser.traverse($('#simple-test-01')),
+        {id: '1', name: 'FooBar'},
+        'wrong object value'
+    );
+    assert.deepEqual(
+        parser.traverse($('#simple-test-02')),
+        {title: 2, name: 'Test'},
+        'wrong object value'
+    );
+});
 
 

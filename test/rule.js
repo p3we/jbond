@@ -44,7 +44,7 @@ QUnit.test('rule type test', function(assert) {
     );
     assert.propEqual(
         rule.parse('type:object; properties:id'),
-        {type: 'object', properties: {id: {bind_id: 0}}},
+        {type: 'object', properties: {id: {$target: 0}}},
         'wrong type for provider rule'
     );
     assert.throws(
@@ -64,12 +64,12 @@ QUnit.test('rule items and properties test', function(assert) {
 
     assert.propEqual(
         rule.parse('type:array; items:number; bind:options'),
-        {type: 'array', items: {type: 'number'}, bind: 'options'},
+        {type: 'array', items: {type: 'number'}, $bind: 'options'},
         'wrong items type for provided rule'
     );
     assert.propEqual(
         rule.parse('type:array; bind:options'),
-        {type: 'array', bind: 'options'},
+        {type: 'array', $bind: 'options'},
         'wrong items type for provided rule'
     );
     assert.throws(
@@ -83,8 +83,8 @@ QUnit.test('rule items and properties test', function(assert) {
         rule.parse('type:object; properties:id,value; bind:default'),
         {
             type: 'object',
-            properties: {id: {bind_id: 0}, value: {bind_id: 1}},
-            bind: 'default'
+            properties: {id: {$target: 0}, value: {$target: 1}},
+            $bind: 'default'
         },
         'wrong propetries for provided rule'
     );
@@ -92,8 +92,8 @@ QUnit.test('rule items and properties test', function(assert) {
         rule.parse('type:object; properties:value=number,label; bind:content'),
         {
             type: 'object',
-            properties: {value: {type: 'number', bind: 'attr=value'}, label: {bind_id: 0}},
-            bind: 'content'
+            properties: {value: {type: 'number', $bind: 'attr=value'}, label: {$target: 0}},
+            $bind: 'content'
         },
         'wrong propetries for provided rule'
     );
@@ -111,7 +111,7 @@ QUnit.test('rule bind test', function(assert) {
 
     assert.propEqual(
         rule.parse('type:string; bind:default'),
-        {type: 'string', bind: 'default'},
+        {type: 'string', $bind: 'default'},
         'wrong bind method for provided rule'
     );
     assert.throws(
@@ -123,20 +123,20 @@ QUnit.test('rule bind test', function(assert) {
     );
     assert.propEqual(
         rule.parse('type:string; bind:attr=title'),
-        {type: 'string', bind: 'attr=title'},
+        {type: 'string', $bind: 'attr=title'},
         'wrong bind method for provided rule'
     );
     assert.propEqual(
         rule.parse('type:array; bind:options'),
-        {type: 'array', bind: 'options'},
+        {type: 'array', $bind: 'options'},
         'wrong bind method for provided rule'
     );
     assert.propEqual(
         rule.parse('type:object; properties:id=number,name; bind:default'),
         {
             type: 'object',
-            properties: {id: {type: 'number', bind: 'attr=id'}, name: {bind_id: 0}},
-            bind: 'default'
+            properties: {id: {type: 'number', $bind: 'attr=id'}, name: {$target: 0}},
+            $bind: 'default'
         },
         'wrong bind method for provided rule'
     );
@@ -144,8 +144,8 @@ QUnit.test('rule bind test', function(assert) {
         rule.parse('type:object; properties:id,name; bind:content'),
         {
             type: 'object',
-            properties: {id: {bind_id: 0}, name: {bind_id: 1}},
-            bind: 'content'
+            properties: {id: {$target: 0}, name: {$target: 1}},
+            $bind: 'content'
         },
         'wrong bind method for provided rule'
     );
