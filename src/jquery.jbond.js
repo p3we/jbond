@@ -130,7 +130,7 @@ var jbond = (function($){
     RuleParser.prototype.constructor = RuleParser;
 
     /**
-     * Exception throw by jbon on schema error
+     * Exception throw by jbond on schema error
      */
     function SchemaError() {
         var err = Error.apply(this, arguments);
@@ -155,6 +155,9 @@ var jbond = (function($){
 
     TreeParser.prototype.rule = function($el) {
         var schema = {type: 'string', $bind: 'default'}
+        if ($el.length != 1) {
+            throw new SchemaError('Unable to create schema for provided element');
+        }
         if ($el.is('[type=number]')) {
             schema.type = 'number';
         }
@@ -228,13 +231,14 @@ var jbond = (function($){
             if($el.children().length < 1) {
                 throw SchemaError('Array has to have at least one children');
             }
+            // determine schema from first element if not available
             if (!('items' in schema)) {
-                var $tpl = $el.children(':first-child');
+                var $tpl = this.find($el.children(':first-child'));
                 schema = $.extend(schema, {items: this.jsonschema($tpl)});
             }
             var result = [];
             $el.children(':not(:first-child)').each((function(i, item){
-                result.push(this.visit($(item), schema.items));
+                result.push(this.visit(this.find($(item)), schema.items));
             }).bind(this));
             return result;
         }
@@ -255,11 +259,12 @@ var jbond = (function($){
                     result[name] = $el.text();
                 }
                 else {
+                    var $child = this.find($children.eq(property.$target));
                     if ('$bind' in property) {
-                        result[name] = this.visit($children.eq(property.$target), property);
+                        result[name] = this.visit($child, property);
                     }
                     else {
-                        result[name] = this.traverse($children.eq(property.$target));
+                        result[name] = this.traverse($child);
                     }
                 }
             }
@@ -269,6 +274,16 @@ var jbond = (function($){
         }
         return result;
     }
+
+    TreeParser.prototype.find = function($el) {
+        var $child = $el.find('[data-$ns]'.replace('$ns', this.options.namespace)).first();
+        if ($el.data(this.options.namespace) || $child.length == 0) {
+            return $el;
+        }
+        else {
+            return $child;
+        }
+    },
 
     TreeParser.prototype.visit = function($el, schema) {
         var result = null;
@@ -292,7 +307,11 @@ var jbond = (function($){
         var schema = this.rule($el);
 
         if (schema.type == 'array' && schema.$bind == 'default') {
-            schema.items = this.jsonschema($el.children().first());
+            schema.items = this.jsonschema(this.find($el.children().first()));
+        }
+
+        if (schema.type == 'array' && schema.$bind == 'options') {
+            schema.items = $.extend({$bind: 'default', type:'string'}, schema.items);
         }
 
         if (schema.type == 'object') {
@@ -302,7 +321,7 @@ var jbond = (function($){
                 if ('$target' in property && schema.$bind == 'default') {
                     schema.properties[name] = $.extend(
                         property,
-                        this.jsonschema($children.eq(property.$target))
+                        this.jsonschema(this.find($children.eq(property.$target)))
                     );
                 }
                 else {
