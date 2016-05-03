@@ -14,6 +14,18 @@ var jbond = (function($){
     RuleError.prototype.constructor = RuleError;
 
     /**
+     * Exception throw by jbond on schema error
+     */
+    function SchemaError() {
+        var err = Error.apply(this, arguments);
+        this.name = 'SchemaError';
+        this.message = err.message;
+        this.stack = err.stack;
+    };
+    SchemaError.prototype = Object.create(Error.prototype);
+    SchemaError.prototype.constructor = SchemaError;
+
+    /**
      * Parser of bond rule specification
      *
      * Examples:
@@ -29,131 +41,125 @@ var jbond = (function($){
             validate: true
         }, options);
     }
-    RuleParser.prototype = Object.create({
-        parse : function(spec) {
-            var self = this, parameters = spec.toLowerCase().split(';'), rule = {};
-            $.each(parameters, function(i, item){
-                if (item.length == 0) {
-                    return;
-                }
-                var param = item.split(':');
-                if (param.length != 2) {
-                    throw new RuleError('wrong rule parameter format: ' + item);
-                }
-                var name = param[0].trim(), value = param[1].trim();
-                switch(name) {
-                    case 'type': rule.type = value; break;
-                    case 'items': rule.items = {'type': value}; break;
-                    case 'properties': rule.properties = self.parseProperties(value); break;
-                    case 'bind': rule['$bind'] = value; break;
-                    default: {
-                        if (name.length) {
-                            throw RuleError('unknown rule parameter: ' + name);
-                        }
-                        break;
-                    }
-                }
-            });
-            this.validate(rule);
-            return rule;
-        },
-
-        parseProperties: function(spec) {
-            var self = this, parameters = spec.split(','), index = 0, properties = {};
-            $.each(parameters, function(i, item){
-                var property = item.trim();
-                if (property.length>0) {
-                    var prop_params = property.split('=');
-                    var prop_name = prop_params[0].trim();
-                    if (prop_params.length>1) {
-                        properties[prop_name] = {
-                            'type': prop_params[1].trim(),
-                            '$bind': 'attr='+prop_name
-                        };
-                    }
-                    else {
-                        properties[prop_name] = {'$target': index};
-                        index = index + 1;
-                    }
-                }
-            });
-            return properties;
-        },
-
-        validate: function(rule) {
-            if (!this.options.validate) {
+    RuleParser.prototype.constructor = RuleParser;
+    /**
+     * Parse data binding rule
+     */
+    RuleParser.prototype.parse = function(spec) {
+        var self = this, parameters = spec.toLowerCase().split(';'), rule = {};
+        $.each(parameters, function(i, item){
+            if (item.length == 0) {
                 return;
             }
-
-            var type_re = /^(null|boolean|number|string|array|object)$/;
-            if (!rule.type.match(type_re)) {
-                throw new RuleError('unknow type: ' + rule.type);
+            var param = item.split(':');
+            if (param.length != 2) {
+                throw new RuleError('wrong rule parameter format: ' + item);
             }
-            if ('$bind' in rule) {
-                if (!rule.$bind.match(/^(default|attr=[a-z]+[a-z0-9_]*|options|content)$/)) {
-                    throw new RuleError('wrong bind method ' + rule.$bind);
+            var name = param[0].trim(), value = param[1].trim();
+            switch(name) {
+                case 'type': rule.type = value; break;
+                case 'items': rule.items = {'type': value}; break;
+                case 'properties': rule.properties = self.parseProperties(value); break;
+                case 'bind': rule['$bind'] = value; break;
+                default: {
+                    if (name.length) {
+                        throw RuleError('unknown rule parameter: ' + name);
+                    }
+                    break;
                 }
             }
-            if (rule.type == 'array') {
-                if ('$bind' in rule && !rule.$bind.match(/^(default|options)$/)) {
-                    throw new RuleError('bind method not allowed');
-                }
-            }
-            if (rule.type == 'array' && rule.items) {
-                if (!rule.items.type || !rule.items.type.match(type_re)) {
-                    throw new RuleError('wrong items type: ' + rule.items.type);
-                }
-            }
-            if (rule.type == 'object') {
-                if (!rule.properties) {
-                    throw new RuleError('missing parameter "properties" is required for type object');
+        });
+        this.validate(rule);
+        return rule;
+    }
+    /**
+     * Parse properties parameter, finds attribute type or target child
+     */
+    RuleParser.prototype.parseProperties = function(spec) {
+        var self = this, parameters = spec.split(','), index = 0, properties = {};
+        $.each(parameters, function(i, item){
+            var property = item.trim();
+            if (property.length>0) {
+                var prop_params = property.split('=');
+                var prop_name = prop_params[0].trim();
+                if (prop_params.length>1) {
+                    properties[prop_name] = {
+                        'type': prop_params[1].trim(),
+                        '$bind': 'attr='+prop_name
+                    };
                 }
                 else {
-                    for (var name in rule.properties) {
-                        if (!name.match(/^[a-z][a-z0-9_\-]*$/)) {
-                            throw new RuleError('wrong object property name: ' + name);
-                        }
-                        if (rule.properties[name]) {
-                            var property = rule.properties[name];
-                            if (property.type && !property.type.match(type_re)) {
-                                throw new RuleError('wrong property type: ' + property.type);
-                            }
+                    properties[prop_name] = {'$target': index};
+                    index = index + 1;
+                }
+            }
+        });
+        return properties;
+    }
+    /**
+     * Make validation of provided biniding rule
+     */
+    RuleParser.prototype.validate = function(rule) {
+        if (!this.options.validate) {
+            return;
+        }
+
+        var type_re = /^(null|boolean|number|string|array|object)$/;
+        if (!rule.type.match(type_re)) {
+            throw new RuleError('unknow type: ' + rule.type);
+        }
+        if ('$bind' in rule) {
+            if (!rule.$bind.match(/^(default|attr=[a-z]+[a-z0-9_]*|options|content)$/)) {
+                throw new RuleError('wrong bind method ' + rule.$bind);
+            }
+        }
+        if (rule.type == 'array') {
+            if ('$bind' in rule && !rule.$bind.match(/^(default|options)$/)) {
+                throw new RuleError('bind method not allowed');
+            }
+        }
+        if (rule.type == 'array' && rule.items) {
+            if (!rule.items.type || !rule.items.type.match(type_re)) {
+                throw new RuleError('wrong items type: ' + rule.items.type);
+            }
+        }
+        if (rule.type == 'object') {
+            if (!rule.properties) {
+                throw new RuleError('"properties" are required for type object');
+            }
+            else {
+                for (var name in rule.properties) {
+                    if (!name.match(/^[a-z][a-z0-9_\-]*$/)) {
+                        throw new RuleError('wrong object property name: ' + name);
+                    }
+                    if (rule.properties[name]) {
+                        var property = rule.properties[name];
+                        if (property.type && !property.type.match(type_re)) {
+                            throw new RuleError('wrong property type: ' + property.type);
                         }
                     }
                 }
-                if ('$bind' in rule && !rule.$bind.match(/^(default|content)$/)) {
-                    throw new RuleError('bind method not allowed');
-                }
+            }
+            if ('$bind' in rule && !rule.$bind.match(/^(default|content)$/)) {
+                throw new RuleError('bind method not allowed');
             }
         }
-    });
-    RuleParser.prototype.constructor = RuleParser;
+    }
 
     /**
-     * Exception throw by jbond on schema error
+     * JBond functionality common for parser and composer
      */
-    function SchemaError() {
-        var err = Error.apply(this, arguments);
-        this.name = 'SchemaError';
-        this.message = err.message;
-        this.stack = err.stack;
-    };
-    SchemaError.prototype = Object.create(Error.prototype);
-    SchemaError.prototype.constructor = SchemaError;
-
-    /**
-     * Parse DOM tree to create JSON data
-     */
-    function TreeParser(options) {
+    function RuleTree(options) {
         this.options = $.extend({
             namespace: 'rule',
             RuleParser: RuleParser,
         }, options);
-        this.ruleParser = new this.options.RuleParser({validate:false});
     }
-    TreeParser.prototype.constructor = TreeParser
-
-    TreeParser.prototype.rule = function($el) {
+    RuleTree.prototype.constructor = RuleTree;
+    /**
+     * Parse bind attribute on provided element and return schema
+     */
+    RuleTree.prototype.rule = function($el) {
         var schema = {type: 'string', $bind: 'default'}
         if ($el.length != 1) {
             throw new SchemaError('Unable to create schema for provided element');
@@ -171,11 +177,70 @@ var jbond = (function($){
         }
         return schema;
     }
+    /**
+     * Find closest element with bind attribute
+     */
+    RuleTree.prototype.find = function($el) {
+        var $child = $el.find('[data-$ns]'.replace('$ns', this.options.namespace)).first();
+        if ($el.data(this.options.namespace) || $child.length == 0) {
+            return $el;
+        }
+        else {
+            return $child;
+        }
+    }
+    /**
+     * Return extended JSON Schema for provided HTML subtree
+     */
+    RuleTree.prototype.jsonschema = function($el) {
+        var schema = this.rule($el);
+        if (schema.type == 'array') {
+            if (schema.$bind == 'options') {
+                schema.items = $.extend({$bind: 'default', type: 'string'}, schema.items);
+            }
+            else {
+                schema.items = this.jsonschema(this.find($el.children().first()));
+            }
+        }
+        else if (schema.type == 'object') {
+            var $children = $el.children();
+            for (var name in schema.properties) {
+                var property = schema.properties[name];
+                if ('$target' in property && schema.$bind == 'default') {
+                    schema.properties[name] = $.extend(
+                        property,
+                        this.jsonschema(this.find($children.eq(property.$target)))
+                    );
+                }
+                else {
+                    schema.properties[name] = $.extend({type: 'string'}, property);
+                }
+            }
+        }
+        return schema;
+    }
 
+    /**
+     * Parse DOM tree to create JSON data
+     */
+    function TreeParser(options) {
+        this.options = $.extend({
+            namespace: 'rule',
+            RuleParser: RuleParser,
+        }, options);
+        this.ruleParser = new this.options.RuleParser({validate:false});
+    }
+    TreeParser.prototype = Object.create(RuleTree.prototype);
+    TreeParser.prototype.constructor = TreeParser;
+    /**
+     * Handle null type
+     */
     TreeParser.prototype.visitNull = function($el, schema) {
         return null;
     }
-
+    /**
+     * Handle boolean type
+     */
     TreeParser.prototype.visitBoolean = function($el, schema) {
         if (schema.$bind.match(/^attr=.*/)) {
             return $el.is('[attr]'.replace('attr', schema.$bind.substr(5)))
@@ -188,11 +253,15 @@ var jbond = (function($){
             return (val == 'true' || val == 't' || 0 < parseInt(val));
         }
     }
-
+    /**
+     * Handle number type
+     */
     TreeParser.prototype.visitNumber = function($el, schema) {
         return parseFloat($.trim(this.visitString($el, schema)));
     }
-
+    /**
+     * Handle string type
+     */
     TreeParser.prototype.visitString = function($el, schema) {
         if (schema.$bind.match(/^attr=.*/)) {
             return $.trim($el.attr(schema.$bind.substr(5)))
@@ -207,8 +276,8 @@ var jbond = (function($){
             return $.trim($el.text());
         }
     }
-
     /**
+     * Handle array type.
      * Parse array based on schema. If schema is unavailable, traverse DOM.
      */
     TreeParser.prototype.visitArray = function($el, schema) {
@@ -243,8 +312,8 @@ var jbond = (function($){
             return result;
         }
     }
-
     /**
+     * Handle object type.
      * Parse object based on schema. If schema is unavailable, traverse DOM.
      */
     TreeParser.prototype.visitObject = function($el, schema) {
@@ -274,17 +343,9 @@ var jbond = (function($){
         }
         return result;
     }
-
-    TreeParser.prototype.find = function($el) {
-        var $child = $el.find('[data-$ns]'.replace('$ns', this.options.namespace)).first();
-        if ($el.data(this.options.namespace) || $child.length == 0) {
-            return $el;
-        }
-        else {
-            return $child;
-        }
-    },
-
+    /**
+     * Visit DOM node, dispatch to proper handing method
+     */
     TreeParser.prototype.visit = function($el, schema) {
         var result = null;
         switch (schema.type) {
@@ -298,39 +359,11 @@ var jbond = (function($){
         }
         return result;
     }
-
+    /**
+     * Find schema and visit DOM node
+     */
     TreeParser.prototype.traverse = function($el) {
         return this.visit($el, this.rule($el));
-    }
-
-    TreeParser.prototype.jsonschema = function($el) {
-        var schema = this.rule($el);
-
-        if (schema.type == 'array' && schema.$bind == 'default') {
-            schema.items = this.jsonschema(this.find($el.children().first()));
-        }
-
-        if (schema.type == 'array' && schema.$bind == 'options') {
-            schema.items = $.extend({$bind: 'default', type:'string'}, schema.items);
-        }
-
-        if (schema.type == 'object') {
-            var $children = $el.children();
-            for (var name in schema.properties) {
-                var property = schema.properties[name];
-                if ('$target' in property && schema.$bind == 'default') {
-                    schema.properties[name] = $.extend(
-                        property,
-                        this.jsonschema(this.find($children.eq(property.$target)))
-                    );
-                }
-                else {
-                    schema.properties[name] = $.extend({type: 'string'}, property);
-                }
-            }
-        }
-
-        return schema;
     }
 
     function TreeComposer(options) {
@@ -341,6 +374,7 @@ var jbond = (function($){
 
     return {
         "RuleError": RuleError,
+        "SchemaError": SchemaError,
         "RuleParser": RuleParser,
         "TreeParser": TreeParser,
     };
