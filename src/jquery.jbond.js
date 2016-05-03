@@ -193,20 +193,26 @@ var jbond = (function($){
      * Visit DOM node, dispatch to proper handing method
      */
     RuleTree.prototype.visit = function($el, schema) {
-        var args = Array.prototype.slice.call(arguments, 2);
         var result = null;
         switch (schema.type) {
-        case 'null': result = this.visitNull($el, schema, args); break;
-        case 'boolean': result = this.visitBoolean($el, schema, args); break;
-        case 'number': result = this.visitNumber($el, schema, args); break;
-        case 'string': result = this.visitString($el, schema, args); break;
-        case 'array': result = this.visitArray($el, schema, args); break;
-        case 'object': result = this.visitObject($el, schema, args); break;
+        case 'null': result = this.visitNull.apply(this, arguments); break;
+        case 'boolean': result = this.visitBoolean.apply(this, arguments); break;
+        case 'number': result = this.visitNumber.apply(this, arguments); break;
+        case 'string': result = this.visitString.apply(this, arguments); break;
+        case 'array': result = this.visitArray.apply(this, arguments); break;
+        case 'object': result = this.visitObject.apply(this, arguments); break;
         default: throw SchemaError('invariant violation'); break;
         }
         return result;
     }
-
+    /**
+     * Find schema and visit DOM node
+     */
+    RuleTree.prototype.traverse = function($el) {
+        var args = Array.prototype.slice.call(arguments);
+        args.splice(1, 0, this.rule($el));
+        return this.visit.apply(this, args);
+    }
     /**
      * Return extended JSON Schema for provided HTML subtree
      */
@@ -358,31 +364,41 @@ var jbond = (function($){
         }
         return result;
     }
-    /**
-     * Find schema and visit DOM node
-     */
-    TreeParser.prototype.traverse = function($el) {
-        return this.visit($el, this.rule($el));
-    }
 
     function TreeComposer(options) {
-        RuleTree.call(options);
+        RuleTree.call(this, options);
         this.ruleParser = new this.options.RuleParser({validate:false});
     }
     TreeComposer.prototype = Object.create(RuleTree.prototype);
     TreeComposer.prototype.constructor = TreeComposer;
 
     TreeComposer.prototype.visitNull = function($el, schema, value) {
-        return null;
+        return;
     }
     TreeComposer.prototype.visitBoolean = function($el, schema, value) {
-        return null;
+        this.visitString($el, schema, value);
     }
     TreeComposer.prototype.visitNumber = function($el, schema, value) {
-        return null;
+        this.visitString($el, schema, value);
     }
     TreeComposer.prototype.visitString = function($el, schema, value) {
-        return null;
+        if (schema.$bind.match(/^attr=.*/)) {
+            $el.attr(schema.$bind.substr(5), value);
+        }
+        else {
+            if ($el.is('select:has(option),fieldset:has(input[type=radio])')) {
+                $el.children('option,input[type=radio]').each(function(i, item){
+                    var $item = $(item);
+                    $item.prop('checked', $item.val() == value)
+                });
+            }
+            else if ($el.is('input,textarea')) {
+                $el.val(value);
+            }
+            else {
+                $el.text(value);
+            }
+        }
     }
     TreeComposer.prototype.visitArray = function($el, schema, value) {
         return null;
