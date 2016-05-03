@@ -190,6 +190,24 @@ var jbond = (function($){
         }
     }
     /**
+     * Visit DOM node, dispatch to proper handing method
+     */
+    RuleTree.prototype.visit = function($el, schema) {
+        var args = Array.prototype.slice.call(arguments, 2);
+        var result = null;
+        switch (schema.type) {
+        case 'null': result = this.visitNull($el, schema, args); break;
+        case 'boolean': result = this.visitBoolean($el, schema, args); break;
+        case 'number': result = this.visitNumber($el, schema, args); break;
+        case 'string': result = this.visitString($el, schema, args); break;
+        case 'array': result = this.visitArray($el, schema, args); break;
+        case 'object': result = this.visitObject($el, schema, args); break;
+        default: throw SchemaError('invariant violation'); break;
+        }
+        return result;
+    }
+
+    /**
      * Return extended JSON Schema for provided HTML subtree
      */
     RuleTree.prototype.jsonschema = function($el) {
@@ -224,10 +242,7 @@ var jbond = (function($){
      * Parse DOM tree to create JSON data
      */
     function TreeParser(options) {
-        this.options = $.extend({
-            namespace: 'rule',
-            RuleParser: RuleParser,
-        }, options);
+        RuleTree.call(this, options);
         this.ruleParser = new this.options.RuleParser({validate:false});
     }
     TreeParser.prototype = Object.create(RuleTree.prototype);
@@ -344,22 +359,6 @@ var jbond = (function($){
         return result;
     }
     /**
-     * Visit DOM node, dispatch to proper handing method
-     */
-    TreeParser.prototype.visit = function($el, schema) {
-        var result = null;
-        switch (schema.type) {
-        case 'null': result = this.visitNull($el, schema); break;
-        case 'boolean': result = this.visitBoolean($el, schema); break;
-        case 'number': result = this.visitNumber($el, schema); break;
-        case 'string': result = this.visitString($el, schema); break;
-        case 'array': result = this.visitArray($el, schema); break;
-        case 'object': result = this.visitObject($el, schema); break;
-        default: throw Error('invariant violation'); break;
-        }
-        return result;
-    }
-    /**
      * Find schema and visit DOM node
      */
     TreeParser.prototype.traverse = function($el) {
@@ -367,9 +366,29 @@ var jbond = (function($){
     }
 
     function TreeComposer(options) {
-        this.options = $.extend({
-            namespace: 'rule'
-        }, options);
+        RuleTree.call(options);
+        this.ruleParser = new this.options.RuleParser({validate:false});
+    }
+    TreeComposer.prototype = Object.create(RuleTree.prototype);
+    TreeComposer.prototype.constructor = TreeComposer;
+
+    TreeComposer.prototype.visitNull = function($el, schema, value) {
+        return null;
+    }
+    TreeComposer.prototype.visitBoolean = function($el, schema, value) {
+        return null;
+    }
+    TreeComposer.prototype.visitNumber = function($el, schema, value) {
+        return null;
+    }
+    TreeComposer.prototype.visitString = function($el, schema, value) {
+        return null;
+    }
+    TreeComposer.prototype.visitArray = function($el, schema, value) {
+        return null;
+    }
+    TreeComposer.prototype.visitObject = function($el, schema, value) {
+        return null;
     }
 
     return {
@@ -377,5 +396,6 @@ var jbond = (function($){
         "SchemaError": SchemaError,
         "RuleParser": RuleParser,
         "TreeParser": TreeParser,
+        "TreeComposer": TreeComposer,
     };
 })(jQuery);
