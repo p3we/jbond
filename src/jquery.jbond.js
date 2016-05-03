@@ -63,7 +63,7 @@ var jbond = (function($){
                 case 'bind': rule['$bind'] = value; break;
                 default: {
                     if (name.length) {
-                        throw RuleError('unknown rule parameter: ' + name);
+                        throw new RuleError('unknown rule parameter: ' + name);
                     }
                     break;
                 }
@@ -201,7 +201,7 @@ var jbond = (function($){
         case 'string': result = this.visitString.apply(this, arguments); break;
         case 'array': result = this.visitArray.apply(this, arguments); break;
         case 'object': result = this.visitObject.apply(this, arguments); break;
-        default: throw SchemaError('invariant violation'); break;
+        default: throw new SchemaError('invariant violation'); break;
         }
         return result;
     }
@@ -310,16 +310,16 @@ var jbond = (function($){
                     switch(schema.type) {
                         case 'number': result.push(parseFloat(value)); break;
                         case 'string': result.push(value); break;
-                        default: throw SchemaError('invariant violation');
+                        default: throw new SchemaError('invariant violation');
                     }
                 });
                 return result;
             }
-            throw SchemaError('invariant violation');
+            throw new SchemaError('invariant violation');
         }
         else {
             if($el.children().length < 1) {
-                throw SchemaError('Array has to have at least one children');
+                throw new SchemaError('Array has to have at least one children');
             }
             // determine schema from first element if not available
             if (!('items' in schema)) {
@@ -344,7 +344,7 @@ var jbond = (function($){
             if ('$target' in property) {
                 if (schema.$bind == 'content') {
                     if (property.$target != 0) {
-                        throw Error('unbound property: ' + name);
+                        throw new SchemaError('unbound property: ' + name);
                     }
                     result[name] = $el.text();
                 }
