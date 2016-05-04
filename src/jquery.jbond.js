@@ -304,13 +304,14 @@ var jbond = (function($){
     TreeParser.prototype.visitArray = function($el, schema) {
         if (schema.$bind == 'options') {
             var schema = $.extend({items: {type: 'string'}}, schema);
-            if ($el.is('select[multiple]')) {
+            if ($el.is('select[multiple], fieldset:has(input[type=checkbox])')) {
                 var result = [];
-                $.each($el.val(), function(i, value){
+                $el.children('select option:selected, fieldset input:checked', function(i, item) {
+                    var $item = $(item);
                     switch(schema.type) {
-                        case 'number': result.push(parseFloat(value)); break;
-                        case 'string': result.push(value); break;
-                        default: throw new SchemaError('invariant violation');
+                    case 'number': result.push(parseFloat($item.val())); break;
+                    case 'string': result.push($item.val()); break;
+                    default: throw new SchemaError('invariant violation');
                     }
                 });
                 return result;
@@ -401,10 +402,75 @@ var jbond = (function($){
         }
     }
     TreeComposer.prototype.visitArray = function($el, schema, value) {
-        return null;
+        if (schema.$bind == 'options') {
+            var schema = $.extend({items: {type: 'string'}}, schema);
+            if ($el.is('select[multiple]')) {
+                $el.val($.isArray(value) ? value : []);
+            }
+            else if ($el.is('fieldset:has(input[type=checkbox])')) {
+                $el.find('input').val($.isArray(value) ? value : []);
+            }
+            else {
+                throw new SchemaError('invariant violation');
+            }
+        }
+        else {
+            if($el.children().length < 1) {
+                throw new SchemaError('Array has to have at least one children');
+            }
+            // determine schema from first element if not available
+            var $tpl = this.find($el.children(':first-child'));
+            if (!('items' in schema)) {
+                schema = $.extend(schema, {items: this.jsonschema($tpl)});
+            }
+
+            var $children = $el.children(':not(:first-child)');
+            if ($.isArray(value)) {
+                // alter DOM to match number of array elements
+                if ($children.length > value.length) {
+                    $children.slice(value.length).remove();
+                }
+                else if ($children.length < value.length) {
+                    for (var i = $children.length; i < value.length; i++) {
+                        $el.append($tpl.clone().show().removeAttr('disabled'));
+                    }
+                }
+
+                $children.each((function(i, item){
+                    this.visit(this.find($(item)), schema.items, (i in value ) ? value[i] : null);
+                }).bind(this));
+            }
+            else {
+                $children.remove();
+            }
+        }
     }
     TreeComposer.prototype.visitObject = function($el, schema, value) {
-        return null;
+        var $children = $el.children();
+        for (var name in schema.properties) {
+            var property = schema.properties[name];
+            var property_value = (value && name in value) ? value[name] : null;
+            if ('$target' in property) {
+                if (schema.$bind == 'content') {
+                    if (property.$target != 0) {
+                        throw new SchemaError('unbound property: ' + name);
+                    }
+                    $el.text(property_value);
+                }
+                else {
+                    var $child = this.find($children.eq(property.$target));
+                    if ('$bind' in property) {
+                        this.visit($child, property, property_value);
+                    }
+                    else {
+                        this.traverse($child, property_value);
+                    }
+                }
+            }
+            else {
+                this.visit($el, property, property_value);
+            }
+        }
     }
 
     return {
