@@ -182,7 +182,7 @@ var jbond = (function($){
      */
     RuleTree.prototype.find = function($el) {
         var $child = $el.find('[data-$ns]'.replace('$ns', this.options.namespace)).first();
-        if ($el.data(this.options.namespace) || $child.length == 0) {
+        if ($el.data(this.options.namespace)!=null || $child.length == 0) {
             return $el;
         }
         else {
@@ -305,16 +305,15 @@ var jbond = (function($){
         if (schema.$bind == 'options') {
             var schema = $.extend({items: {type: 'string'}}, schema);
             if ($el.is('select[multiple], fieldset:has(input[type=checkbox])')) {
-                var result = [];
-                $el.children('select option:selected, fieldset input:checked', function(i, item) {
+                return $el.children('option:selected, input:checked').map(function(i, item) {
                     var $item = $(item);
                     switch(schema.type) {
-                    case 'number': result.push(parseFloat($item.val())); break;
-                    case 'string': result.push($item.val()); break;
+                    case 'boolean': return $item.val().toLowerCase() == 'true';
+                    case 'number': return parseFloat($item.val());
+                    case 'string': return $item.val();
                     default: throw new SchemaError('invariant violation');
                     }
-                });
-                return result;
+                }).get();
             }
             throw new SchemaError('invariant violation');
         }
@@ -327,11 +326,9 @@ var jbond = (function($){
                 var $tpl = this.find($el.children(':first-child'));
                 schema = $.extend(schema, {items: this.jsonschema($tpl)});
             }
-            var result = [];
-            $el.children(':not(:first-child)').each((function(i, item){
-                result.push(this.visit(this.find($(item)), schema.items));
-            }).bind(this));
-            return result;
+            return $el.children(':not(:first-child)').map((function(i, item){
+                return this.visit(this.find($(item)), schema.items);
+            }).bind(this)).get();
         }
     }
     /**
@@ -424,21 +421,26 @@ var jbond = (function($){
                 schema = $.extend(schema, {items: this.jsonschema($tpl)});
             }
 
-            var $children = $el.children(':not(:first-child)');
             if ($.isArray(value)) {
                 // alter DOM to match number of array elements
+                var self=this, $children = $el.children(':not(:first-child)');
                 if ($children.length > value.length) {
                     $children.slice(value.length).remove();
                 }
                 else if ($children.length < value.length) {
+                    var $item = $tpl.clone(), ns = 'data-$ns'.replace('$ns', this.options.namespace);
+                    // make data-* an empty attibute to sign only where bond have place
+                    $item.removeAttr('disabled').removeAttr('hidden').show();
+                    $item.add('['+ns+']', $item).attr(ns, '');
                     for (var i = $children.length; i < value.length; i++) {
-                        $el.append($tpl.clone().show().removeAttr('disabled'));
+                        $el.append($item.clone());
                     }
                 }
 
-                $children.each((function(i, item){
-                    this.visit(this.find($(item)), schema.items, (i in value ) ? value[i] : null);
-                }).bind(this));
+                $el.children(':not(:first-child)').each(function(i, item){
+                    var $item = $(item);
+                    self.visit(self.find($item), schema.items, (i in value ) ? value[i] : null);
+                });
             }
             else {
                 $children.remove();

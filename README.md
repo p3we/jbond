@@ -33,11 +33,11 @@ This tiny library let's you bind data to *HTML* structure, so you can easy retri
     <li hidden data-rule="type:object; properties:title=string,nick; bind:default">
       <p data-rule="type:string"></p>
     </li>
-    <li title="Peter">
-      <p>pit</p>
+    <li title="Peter" data-rule>
+      <p data-rule>pit</p>
     </li>
-    <li title="Michael">
-      <p>mike</p>
+    <li title="Michael" data-rule>
+      <p data-rule>mike</p>
     </li>
   </ul>
 </form>
