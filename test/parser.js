@@ -1,38 +1,31 @@
 QUnit.test('parser test for boolean', function(assert) {
-    $('<span id="simple-test-01" data-jbond="type:boolean">1</span>')
+    $('<span id="tc01" data-jbond="type:boolean">true</span>')
     .appendTo('#qunit-fixture');
-    $('<span id="simple-test-02" data-jbond="type:boolean">true</span>')
+    $('<span id="tc02" data-jbond="type:boolean">false</span>')
     .appendTo('#qunit-fixture');
-    $('<span id="simple-test-03" data-jbond="type:boolean">false</span>')
+    $('<input id="tc03" data-jbond="type:boolean" type="checkbox" checked>')
     .appendTo('#qunit-fixture');
-    $('<input id="simple-test-04" data-jbond="type:boolean" type="checkbox" checked>')
-    .appendTo('#qunit-fixture');
-    $('<span id="simple-test-05" data-jbond="type:boolean;bind:attr=title" title="1"></span>')
+    $('<span id="tc04" data-jbond="type:boolean;bind:attr=title" title="true"></span>')
     .appendTo('#qunit-fixture');
 
     var parser = new jbond.TreeParser();
     assert.equal(
-        parser.traverse($('#simple-test-01')),
+        parser.traverse($('#tc01')),
         true,
         'wrong boolean value'
     );
     assert.equal(
-        parser.traverse($('#simple-test-02')),
-        true,
-        'wrong boolean value'
-    );
-    assert.equal(
-        parser.traverse($('#simple-test-03')),
+        parser.traverse($('#tc02')),
         false,
         'wrong boolean value'
     );
     assert.equal(
-        parser.traverse($('#simple-test-04')),
+        parser.traverse($('#tc03')),
         true,
         'wrong boolean value'
     );
     assert.equal(
-        parser.traverse($('#simple-test-05')),
+        parser.traverse($('#tc04')),
         true,
         'wrong boolean value'
     );

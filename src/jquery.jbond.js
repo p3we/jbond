@@ -271,7 +271,7 @@ var jbond = (function($){
                 return $el.is(':checked');
             }
             var val = $.trim(this.visitString($el, schema));
-            return (val == 'true' || val == 't' || 0 < parseInt(val));
+            return (val.toLowerCase() == 'true');
         }
     }
     /**
@@ -373,7 +373,17 @@ var jbond = (function($){
         return;
     }
     TreeComposer.prototype.visitBoolean = function($el, schema, value) {
-        this.visitString($el, schema, value);
+        if (schema.$bind.match(/^attr=.*/)) {
+            this.visitString($el, schema, value);
+        }
+        else {
+            if ($el.is('input[type=checkbox]')) {
+                return $el.prop('checked', value);
+            }
+            else {
+                this.visitString($el, schema, value);
+            }
+        }
     }
     TreeComposer.prototype.visitNumber = function($el, schema, value) {
         this.visitString($el, schema, value);
@@ -479,18 +489,32 @@ var jbond = (function($){
         }
     }
 
-    var plugin = {
-        tree: new RuleTree(),
-        parser: new TreeParser(),
-        composer: new TreeComposer()
-    }
-
-    $.fn.jbond = function(method, arg) {
+    /**
+     * JBond jQuery plugin
+     *
+     * Interface:
+     *
+     * @method parse: parse element and return associated data
+     * @param: options {namespace: 'jbond'}: plugin options object
+     *
+     * @method compose: parse element and set data
+     * @param data: data for composition
+     * @param options {namespace: 'jbond'}: plugin options object
+     *
+     * @method jsonschema: retrun JSON Schema for element
+     * @param: options {namespace: 'jbond'}: plugin options object
+     */
+    $.fn.jbond = function(method) {
         switch(method) {
-            case 'jsonschema': return plugin.tree.jsonschema(this);
-            case 'parse': return plugin.parser.traverse(this);
-            case 'compose': return plugin.composer.traverse(this, arg);
-            default: throw new Error('invalid method');
+           case 'parse':
+                var parser = new TreeParser(arguments[1]);
+                return parser.traverse(this);
+            case 'compose':
+                var composer = new TreeComposer(arguments[2]);
+                return composer.traverse(this, arguments[1]);
+            default:
+                var tree = new RuleTree(arguments[1]);
+                return tree.jsonschema(this);
         }
     }
 

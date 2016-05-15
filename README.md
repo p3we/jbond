@@ -41,11 +41,10 @@ This tiny library let's you bind data to *HTML* structure, so you can easy retri
     </li>
   </ul>
 </form>
-<div class="widget">
-  <select data-jbond="type:array; bind:default">
-    <option disabled hidden data-jbond="type:object; properties:value=number,name; bind:content"></option>
-    <option value="admin">Admin</option>
-    <option value="users">Users</option>
-  </select>
-</div>
+
+<select data-jbond="type:array; bind:default">
+  <option disabled hidden data-jbond="type:object; properties:value=string,name; bind:content"></option>
+  <option value="admin">Admin</option>
+  <option value="users">Users</option>
+</select>
 ```
