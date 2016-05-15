@@ -1,6 +1,6 @@
 QUnit.test('composer test for array', function(assert) {
-    $('<ul id="tc01" data-rule="type:array; bind:default">' +
-      ' <li style="display:none" data-rule="type:string"></li>' +
+    $('<ul id="tc01" data-jbond="type:array; bind:default">' +
+      ' <li style="display:none" data-jbond="type:string"></li>' +
       '</ul>'
     ).appendTo('#qunit-fixture');
 

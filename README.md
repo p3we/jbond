@@ -20,30 +20,30 @@ This tiny library let's you bind data to *HTML* structure, so you can easy retri
 # Example
 
 ```html
-<form data-rule="type:object; properties:name,roles,friends">
-  <h3 data-rule="type:string; bind:default">p3we</h3>
+<form data-jbond="type:object; properties:name,roles,friends">
+  <h3 data-jbond="type:string; bind:default">p3we</h3>
   <div class="form-group">
     <label>Roles</label>
-    <select data-rule="type:array; items:string; bind:options" multiple>
+    <select data-jbond="type:array; items:string; bind:options" multiple>
       <option value="admin">Admin</option>
       <option value="users">Users</option>
     </select>
   </div>
-  <ul data-rule="type:array; bind:default">
-    <li hidden data-rule="type:object; properties:title=string,nick; bind:default">
-      <p data-rule="type:string"></p>
+  <ul data-jbond="type:array; bind:default">
+    <li hidden data-jbond="type:object; properties:title=string,nick; bind:default">
+      <p data-jbond="type:string"></p>
     </li>
-    <li title="Peter" data-rule>
-      <p data-rule>pit</p>
+    <li title="Peter" data-jbond>
+      <p data-jbond>pit</p>
     </li>
-    <li title="Michael" data-rule>
-      <p data-rule>mike</p>
+    <li title="Michael" data-jbond>
+      <p data-jbond>mike</p>
     </li>
   </ul>
 </form>
 <div class="widget">
-  <select data-rule="type:array; bind:default">
-    <option disabled hidden data-rule="type:object; properties:value=number,name; bind:content"></option>
+  <select data-jbond="type:array; bind:default">
+    <option disabled hidden data-jbond="type:object; properties:value=number,name; bind:content"></option>
     <option value="admin">Admin</option>
     <option value="users">Users</option>
   </select>

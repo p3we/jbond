@@ -32,9 +32,7 @@
         <div class="row">
             <div class="col-sm-12">
                 <div class="panel panel-primary">
-                    <div class="panel-heading">
-                        View
-                    </div>
+                    <div class="panel-heading">View</div>
                     <div id="result" class="panel-body">
                     </div>
                 </div>
@@ -50,13 +48,11 @@
         });
 
         $('#compose').click(function(ev){
-            var composer = new jbond.TreeComposer({namespace: "jbond"});
-            composer.traverse($('#result > :first-child'), JSON.parse($('textarea#json').val()));
+            $('#result > :first-child').jbond('compose', JSON.parse($('textarea#json').val()));
         });
 
         $('#parse').click(function(ev){
-            var parser = new jbond.TreeParser({namespace: "jbond"});
-            var result = parser.traverse($('#result > :first-child'));
+            var result = $('#result > :first-child').jbond('parse');
             $('textarea#json').val(JSON.stringify(result));
         });
 

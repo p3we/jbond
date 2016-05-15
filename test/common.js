@@ -1,12 +1,12 @@
 QUnit.test('test jsonschema', function(assert) {
-    $('<div id="tc01" data-rule="type:object;properties:name,tags">' +
-      ' <ul data-rule="type:object;properties:name,surname">' +
+    $('<div id="tc01" data-jbond="type:object;properties:name,tags">' +
+      ' <ul data-jbond="type:object;properties:name,surname">' +
       '  <li>Jan</li><li>Kowalski</li>' +
       ' </ul>' +
-      ' <ul data-rule="type:array">' +
-      '  <li data-rule="type:object; properties:id,names">' +
+      ' <ul data-jbond="type:array">' +
+      '  <li data-jbond="type:object; properties:id,names">' +
       '   <span></span>' +
-      '   <select data-rule="type:array; bind:options" multiple></select>' +
+      '   <select data-jbond="type:array; bind:options" multiple></select>' +
       '  </li>' +
       ' </ul>' +
       '</div>'

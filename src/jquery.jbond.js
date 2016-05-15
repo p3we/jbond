@@ -151,9 +151,10 @@ var jbond = (function($){
      */
     function RuleTree(options) {
         this.options = $.extend({
-            namespace: 'rule',
+            namespace: 'jbond',
             RuleParser: RuleParser,
         }, options);
+        this.ruleParser = new this.options.RuleParser({validate:false});
     }
     RuleTree.prototype.constructor = RuleTree;
     /**
@@ -249,7 +250,6 @@ var jbond = (function($){
      */
     function TreeParser(options) {
         RuleTree.call(this, options);
-        this.ruleParser = new this.options.RuleParser({validate:false});
     }
     TreeParser.prototype = Object.create(RuleTree.prototype);
     TreeParser.prototype.constructor = TreeParser;
@@ -289,7 +289,7 @@ var jbond = (function($){
         }
         else {
             if ($el.is('select:has(option),fieldset:has(input[type=radio])')) {
-                return $el.children(':checked').val();
+                return $el.find(':checked').val();
             }
             if ($el.is('input,textarea')) {
                 return $el.val();
@@ -304,8 +304,8 @@ var jbond = (function($){
     TreeParser.prototype.visitArray = function($el, schema) {
         if (schema.$bind == 'options') {
             var schema = $.extend({items: {type: 'string'}}, schema);
-            if ($el.is('select[multiple], fieldset:has(input[type=checkbox])')) {
-                return $el.find('option:selected, input:checked').map(function(i, item) {
+            if ($el.is('select[multiple],fieldset:has(input[type=checkbox])')) {
+                return $el.find('option:selected,input:checked').map(function(i, item) {
                     var $item = $(item);
                     switch(schema.items.type) {
                     case 'boolean': return $item.val().toLowerCase() == 'true';
@@ -365,7 +365,6 @@ var jbond = (function($){
 
     function TreeComposer(options) {
         RuleTree.call(this, options);
-        this.ruleParser = new this.options.RuleParser({validate:false});
     }
     TreeComposer.prototype = Object.create(RuleTree.prototype);
     TreeComposer.prototype.constructor = TreeComposer;
@@ -477,6 +476,21 @@ var jbond = (function($){
             else {
                 this.visit($el, property, property_value);
             }
+        }
+    }
+
+    var plugin = {
+        tree: new RuleTree(),
+        parser: new TreeParser(),
+        composer: new TreeComposer()
+    }
+
+    $.fn.jbond = function(method, arg) {
+        switch(method) {
+            case 'jsonschema': return plugin.tree.jsonschema(this);
+            case 'parse': return plugin.parser.traverse(this);
+            case 'compose': return plugin.composer.traverse(this, arg);
+            default: throw new Error('invalid method');
         }
     }
 
