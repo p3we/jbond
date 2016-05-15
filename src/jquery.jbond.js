@@ -305,9 +305,9 @@ var jbond = (function($){
         if (schema.$bind == 'options') {
             var schema = $.extend({items: {type: 'string'}}, schema);
             if ($el.is('select[multiple], fieldset:has(input[type=checkbox])')) {
-                return $el.children('option:selected, input:checked').map(function(i, item) {
+                return $el.find('option:selected, input:checked').map(function(i, item) {
                     var $item = $(item);
-                    switch(schema.type) {
+                    switch(schema.items.type) {
                     case 'boolean': return $item.val().toLowerCase() == 'true';
                     case 'number': return parseFloat($item.val());
                     case 'string': return $item.val();
@@ -384,8 +384,14 @@ var jbond = (function($){
             $el.attr(schema.$bind.substr(5), value);
         }
         else {
-            if ($el.is('select:has(option),fieldset:has(input[type=radio])')) {
-                $el.children('option,input[type=radio]').each(function(i, item){
+            if ($el.is('select:has(option)')) {
+                $el.children('option').each(function(i, item){
+                    var $item = $(item);
+                    $item.prop('selected', $item.val() == value)
+                });
+            }
+            else if ($el.is('fieldset:has(input[type=radio])')) {
+                $el.children('input[type=radio]').each(function(i, item){
                     var $item = $(item);
                     $item.prop('checked', $item.val() == value)
                 });
@@ -421,9 +427,9 @@ var jbond = (function($){
                 schema = $.extend(schema, {items: this.jsonschema($tpl)});
             }
 
+            var $children = $el.children(':not(:first-child)');
             if ($.isArray(value)) {
                 // alter DOM to match number of array elements
-                var self=this, $children = $el.children(':not(:first-child)');
                 if ($children.length > value.length) {
                     $children.slice(value.length).remove();
                 }
@@ -437,10 +443,9 @@ var jbond = (function($){
                     }
                 }
 
-                $el.children(':not(:first-child)').each(function(i, item){
-                    var $item = $(item);
-                    self.visit(self.find($item), schema.items, (i in value ) ? value[i] : null);
-                });
+                $el.children(':not(:first-child)').each((function(i, item){
+                    this.visit(this.find($(item)), schema.items, (i in value ) ? value[i] : null);
+                }).bind(this));
             }
             else {
                 $children.remove();

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>JBond Demo</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-6">
+                <h3>HTML</h3>
+                <textarea id="html" rows="12" class="form-control"></textarea>
+            </div>
+            <div class="col-sm-6">
+                <h3>JSON</h3>
+                <textarea id="json" rows="12" class="form-control"></textarea>
+            </div>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="btn-group">
+                    <button id="template" class="btn btn-default">Change Template</button>
+                    <button id="parse" class="btn btn-default">Parse JSON</button>
+                    <button id="compose" class="btn btn-default">Compose JSON</button>
+                </div>
+            </div>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        View
+                    </div>
+                    <div id="result" class="panel-body">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-1.12.0.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <script src="src/jquery.jbond.js"></script>
+    <script type="text/javascript">
+        $('#template').click(function(ev){
+            $('#result').html($('textarea#html').val());
+        });
+
+        $('#compose').click(function(ev){
+            var composer = new jbond.TreeComposer({namespace: "jbond"});
+            composer.traverse($('#result > :first-child'), JSON.parse($('textarea#json').val()));
+        });
+
+        $('#parse').click(function(ev){
+            var parser = new jbond.TreeParser({namespace: "jbond"});
+            var result = parser.traverse($('#result > :first-child'));
+            $('textarea#json').val(JSON.stringify(result));
+        });
+
+        $(function(){
+            $('textarea#html').val(
+            '<form data-jbond="type:object; properties:name,group,tags">\n' +
+            '<div class="form-group">' +
+            '<label for="name">Name:</label>' +
+            '<input id="name" data-jbond type="text" value="john" class="form-control">' +
+            '</div>\n' +
+            '<div class="form-group">' +
+            '<label for="group">Group:</label>' +
+            '<select id="group" data-jbond type="text" class="form-control">' +
+            '<option value="admin">Admin</option>' +
+            '<option value="user" selected>User</option>' +
+            '<option value="observer">Observer</option>' +
+            '</select>' +
+            '</div>\n' +
+            '<div class="form-group">' +
+            '<label for="tags">Tags:</label>' +
+            '<fieldset id="tags" data-jbond="type:array; bind:options">' +
+            '<label><input type="checkbox" value="good"> good</label>' +
+            '<label><input type="checkbox" value="moderator" checked> moderator</label>' +
+            '<label><input type="checkbox" value="cool"> cool</label>' +
+            '</fieldset>' +
+            '</div>\n' +
+            '</form>\n'
+            );
+            $('#template').click();
+            $('#parse').click();
+        });
+    </script>
+</body>
+</html>
