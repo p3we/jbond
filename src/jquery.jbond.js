@@ -163,7 +163,7 @@ var jbond = (function($){
     RuleTree.prototype.rule = function($el) {
         var schema = {type: 'string', $bind: 'default'}
         if ($el.length != 1) {
-            throw new SchemaError('Unable to create schema for provided element');
+            throw new SchemaError('unable to create schema for provided element');
         }
         if ($el.is('[type=number]')) {
             schema.type = 'number';
@@ -446,9 +446,9 @@ var jbond = (function($){
                 throw new SchemaError('array has to have at least one children');
             }
             // determine schema from first element if not available
-            var $tpl = this.find($el.children(':first-child'));
+            var $tpl = $el.children(':first-child');
             if (!('items' in schema)) {
-                schema = $.extend(schema, {items: this.jsonschema($tpl)});
+                schema = $.extend(schema, {items: this.jsonschema(this.find($tpl))});
             }
 
             var $children = $el.children(':not(:first-child)');
@@ -507,6 +507,79 @@ var jbond = (function($){
             }
         }
     }
+    /**
+     * Patch element tree with value
+     * Supported operations: add (type:array), remove (type:array), replace
+     */
+    TreeComposer.prototype.patch = function($el, op, path, value, schema) {
+        // if it is array element, schema have to be provided
+        if (!schema) {
+            var schema = this.rule($el);
+        }
+
+        if (typeof path == 'string' && path.indexOf('/') == 0) {
+            var pieces = path.split('/');
+            if (pieces.length > 1 && (pieces[1].length || op == 'add')) {
+                var name = pieces[1];
+                var subpath = '/' + path.substring(2 + name.length);
+                if (schema.type == 'array' && schema.$bind == 'default') {
+                    if($el.children().length < 1) {
+                        throw new Error('array has to have at least one children');
+                    }
+
+                    var $tpl = $el.children(':first-child');
+                    var items = $.extend(schema.items, this.jsonschema(this.find($tpl)));
+                    if (op == 'add') {
+                        var ns = 'data-$ns'.replace('$ns', this.options.namespace);
+                        var $new_el = $tpl.clone();
+                        $new_el.removeAttr('disabled').removeAttr('hidden').show();
+                        $new_el.add('['+ns+']', $new_el).attr(ns, '');
+                        if ($.isNumeric(name)) {
+                            $el.children(':not(:first-child)').eq(parseInt(name)).before($new_el);
+                        }
+                        else {
+                            $el.append($new_el);
+                        }
+                        return this.visit($new_el, items, value);
+                    }
+
+                    if ($.isNumeric(name)) {
+                        var index = parseInt(name);
+                        var $child = $el.children(':not(:first-child)').eq(index);
+                        if (op == 'remove') {
+                            $child.remove();
+                            return;
+                        }
+                        return this.patch(this.find($child), op, subpath, value, items);
+                    }
+                }
+                if (schema.type == 'object' && schema.$bind == 'default') {
+                    if (name in schema.properties) {
+                        var property = schema.properties[name];
+                        if ('$target' in property) {
+                            var $child = $el.children().eq(property.$target);
+                            if ('$bind' in property) {
+                                return this.patch(this.find($child), op, subpath, value, property);
+                            }
+                            else {
+                                return this.patch(this.find($child), op, subpath, value);
+                            }
+                        }
+                    }
+                }
+                throw new Error('unresolved path: ' + path);
+            }
+            else {
+                if (op == 'replace') {
+                    return this.visit($el, schema, value);
+                }
+                throw new Error('wrong patch operation: ' + op + ' for type: ' + schema.type);
+            }
+        }
+        else {
+            throw new Error('wrong path: ' + path);
+        }
+    }
 
     /**
      * JBond jQuery plugin
@@ -516,8 +589,14 @@ var jbond = (function($){
      * @method parse: parse element and return associated data
      * @param: options {namespace: 'jbond'}: plugin options object
      *
-     * @method compose: parse element and set data
+     * @method compose: parse element and set data to tree
      * @param data: data for composition
+     * @param options {namespace: 'jbond'}: plugin options object
+     *
+     * @method patch: parse element and patch tree
+     * @param op: operation (add, remove, replace)
+     * @param path: path in JSON document
+     * @param data: data for patch
      * @param options {namespace: 'jbond'}: plugin options object
      *
      * @method jsonschema: retrun JSON Schema for element
@@ -525,12 +604,15 @@ var jbond = (function($){
      */
     $.fn.jbond = function(method) {
         switch(method) {
-           case 'parse':
+            case 'parse':
                 var parser = new TreeParser(arguments[1]);
                 return parser.traverse(this);
             case 'compose':
                 var composer = new TreeComposer(arguments[2]);
                 return composer.traverse(this, arguments[1]);
+            case 'patch':
+                var composer = new TreeComposer(arguments[2]);
+                return composer.patch(this, arguments[1], arguments[2], arguments[3], arguments[4]);
             default:
                 var tree = new RuleTree(arguments[1]);
                 return tree.jsonschema(this);
