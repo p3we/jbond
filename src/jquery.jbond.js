@@ -527,6 +527,12 @@ var jbond = (function($){
                         throw new Error('array has to have at least one children');
                     }
 
+                    var $children = $el.children(':not(:first-child)');
+                    if (op == 'remove' && $.isNumeric(name)) {
+                        $children.eq(parseInt(name)).remove()
+                        return;
+                    }
+
                     var $tpl = $el.children(':first-child');
                     var items = $.extend(schema.items, this.jsonschema(this.find($tpl)));
                     if (op == 'add') {
@@ -535,22 +541,16 @@ var jbond = (function($){
                         $new_el.removeAttr('disabled').removeAttr('hidden').show();
                         $new_el.add('['+ns+']', $new_el).attr(ns, '');
                         if ($.isNumeric(name)) {
-                            $el.children(':not(:first-child)').eq(parseInt(name)).before($new_el);
+                            $children.eq(parseInt(name)).before($new_el);
                         }
                         else {
                             $el.append($new_el);
                         }
                         return this.visit($new_el, items, value);
                     }
-
                     if ($.isNumeric(name)) {
                         var index = parseInt(name);
-                        var $child = $el.children(':not(:first-child)').eq(index);
-                        if (op == 'remove') {
-                            $child.remove();
-                            return;
-                        }
-                        return this.patch(this.find($child), op, subpath, value, items);
+                        return this.patch(this.find($children.eq(index)), op, subpath, value, items);
                     }
                 }
                 if (schema.type == 'object' && schema.$bind == 'default') {
