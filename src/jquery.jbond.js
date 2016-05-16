@@ -202,7 +202,7 @@ var jbond = (function($){
         case 'string': result = this.visitString.apply(this, arguments); break;
         case 'array': result = this.visitArray.apply(this, arguments); break;
         case 'object': result = this.visitObject.apply(this, arguments); break;
-        default: throw new SchemaError('invariant violation'); break;
+        default: throw new SchemaError('unknown type: ' + schema.type); break;
         }
         return result;
     }
@@ -311,15 +311,15 @@ var jbond = (function($){
                     case 'boolean': return $item.val().toLowerCase() == 'true';
                     case 'number': return parseFloat($item.val());
                     case 'string': return $item.val();
-                    default: throw new SchemaError('invariant violation');
+                    default: throw new SchemaError('unknown type for array items');
                     }
                 }).get();
             }
-            throw new SchemaError('invariant violation');
+            throw new SchemaError('wrong element, have to be select or fieldset');
         }
         else {
             if($el.children().length < 1) {
-                throw new SchemaError('Array has to have at least one children');
+                throw new SchemaError('array has to have at least one children');
             }
             // determine schema from first element if not available
             if (!('items' in schema)) {
@@ -368,10 +368,15 @@ var jbond = (function($){
     }
     TreeComposer.prototype = Object.create(RuleTree.prototype);
     TreeComposer.prototype.constructor = TreeComposer;
-
+    /**
+     * Handle null type.
+     */
     TreeComposer.prototype.visitNull = function($el, schema, value) {
         return;
     }
+    /**
+     * Handle boolean type.
+     */
     TreeComposer.prototype.visitBoolean = function($el, schema, value) {
         if (schema.$bind.match(/^attr=.*/)) {
             this.visitString($el, schema, value);
@@ -385,9 +390,15 @@ var jbond = (function($){
             }
         }
     }
+    /**
+     * Handle number type.
+     */
     TreeComposer.prototype.visitNumber = function($el, schema, value) {
         this.visitString($el, schema, value);
     }
+    /**
+     * Handle string type.
+     */
     TreeComposer.prototype.visitString = function($el, schema, value) {
         if (schema.$bind.match(/^attr=.*/)) {
             $el.attr(schema.$bind.substr(5), value);
@@ -413,6 +424,10 @@ var jbond = (function($){
             }
         }
     }
+    /**
+     * Handle array type.
+     * Parse array based on schema. If schema is unavailable, traverse DOM.
+     */
     TreeComposer.prototype.visitArray = function($el, schema, value) {
         if (schema.$bind == 'options') {
             var schema = $.extend({items: {type: 'string'}}, schema);
@@ -423,12 +438,12 @@ var jbond = (function($){
                 $el.find('input').val($.isArray(value) ? value : []);
             }
             else {
-                throw new SchemaError('invariant violation');
+                throw new SchemaError('wrong element, have to be select or fieldset');
             }
         }
         else {
             if($el.children().length < 1) {
-                throw new SchemaError('Array has to have at least one children');
+                throw new SchemaError('array has to have at least one children');
             }
             // determine schema from first element if not available
             var $tpl = this.find($el.children(':first-child'));
@@ -461,6 +476,10 @@ var jbond = (function($){
             }
         }
     }
+    /**
+     * Handle object type.
+     * Parse object based on schema. If schema is unavailable, traverse DOM.
+     */
     TreeComposer.prototype.visitObject = function($el, schema, value) {
         var $children = $el.children();
         for (var name in schema.properties) {
