@@ -183,12 +183,16 @@ var jbond = (function($){
      */
     RuleTree.prototype.find = function($el) {
         var $child = $el.find('[data-$ns]'.replace('$ns', this.options.namespace)).first();
-        if ($el.data(this.options.namespace)!=null || $child.length == 0) {
+        if ($el.length == 0) {
+            throw new SchemaError('one or more child elements is missing');
+        }
+        else if ($el.data(this.options.namespace)!=null || $child.length == 0) {
             return $el;
         }
-        else {
+        else if ($child.length > 0) {
             return $child;
         }
+        throw new SchemaError('at least one element descendant have to define bond attibute');
     }
     /**
      * Visit DOM node, dispatch to proper handing method
@@ -235,13 +239,9 @@ var jbond = (function($){
             for (var name in schema.properties) {
                 var property = schema.properties[name];
                 if ('$target' in property && schema.$bind == 'default') {
-                    var $children = $el.children();
-                    if ($children.length <= property.$target) {
-                        throw new SchemaError('not enough child elements for object');
-                    }
                     schema.properties[name] = $.extend(
                         property,
-                        this.jsonschema(this.find($children.eq(property.$target)))
+                        this.jsonschema(this.find($el.children().eq(property.$target)))
                     );
                 }
                 else {
@@ -468,7 +468,7 @@ var jbond = (function($){
                     var $item = $tpl.clone(), ns = 'data-$ns'.replace('$ns', this.options.namespace);
                     // make data-* an empty attibute to sign only where bond have place
                     $item.removeAttr('disabled').removeAttr('hidden').show();
-                    $item.add('['+ns+']', $item).attr(ns, '');
+                    $item.find('*').add($item).filter('['+ns+']').attr(ns, '');
                     for (var i = $children.length; i < value.length; i++) {
                         $el.append($item.clone());
                     }
@@ -548,14 +548,14 @@ var jbond = (function($){
                         var ns = 'data-$ns'.replace('$ns', this.options.namespace);
                         var $new_el = $tpl.clone();
                         $new_el.removeAttr('disabled').removeAttr('hidden').show();
-                        $new_el.add('['+ns+']', $new_el).attr(ns, '');
+                        $new_el.find('*').add($new_el).filter('['+ns+']').attr(ns, '');
                         if ($.isNumeric(name)) {
                             $children.eq(parseInt(name)).before($new_el);
                         }
                         else {
                             $el.append($new_el);
                         }
-                        return this.visit($new_el, items, value);
+                        return this.visit($new_el, schema.items, value);
                     }
                     if ($.isNumeric(name)) {
                         var index = parseInt(name);

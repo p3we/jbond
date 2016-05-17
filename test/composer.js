@@ -173,3 +173,33 @@ QUnit.test('composer test for patch replace method', function(assert) {
     assert.equal($('#tc05 tr:nth(1) td:nth(1) li:nth(2) a em').text(), 'news');
 });
 
+QUnit.test('composer test for patch add and remove methods', function(assert) {
+    $('<div id="tc01" data-jbond="type:object; properties:name,friends">' +
+      ' <div>John Carter</div>' +
+      ' <ul>' +
+      '  <li style="display:none"></li>' +
+      '  <li>friend1</li>' +
+      '  <li>friend2</li>' +
+      '  <li>friend3</li>' +
+      '  <li>friend4</li>' +
+      ' </ul>' +
+      '</div>'
+    ).appendTo('#qunit-fixture');
+
+    var composer = new jbond.TreeComposer();
+
+    assert.equal($('#tc01 ul > li:not(:first-child)').length, 4);
+
+    composer.patch($('#tc01'), 'add', '/friends', 'friend5');
+    assert.equal($('#tc01 ul > li:not(:first-child)').length, 5);
+    assert.equal($('#tc01 ul > li:nth(5)').text(), 'friend5');
+
+    composer.patch($('#tc01'), 'add', '/friends/1', 'stranger');
+    assert.equal($('#tc01 ul > li:not(:first-child)').length, 6);
+    assert.equal($('#tc01 ul > li:nth(2)').text(), 'stranger');
+
+    composer.patch($('#tc01'), 'remove', '/friends/1', 'stranger');
+    assert.equal($('#tc01 ul > li:not(:first-child)').length, 5);
+    assert.equal($('#tc01 ul > li:nth(2)').text(), 'friend2');
+});
+
