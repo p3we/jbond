@@ -99,3 +99,77 @@ QUnit.test('composer test for object', function(assert) {
     assert.equal($('#tc03').text(), '89');
 });
 
+QUnit.test('composer test for patch replace method', function(assert) {
+    $('<ul id="tc01" data-jbond="type:object; properties: title,value">' +
+      ' <li data-jbond="type:string">amount</li>' +
+      ' <li data-jbond="type:number">45</li>' +
+      '</ul>'
+    ).appendTo('#qunit-fixture');
+    $('<ul id="tc02">' +
+      ' <li style="display:none"></li>' +
+      ' <li>john</li>' +
+      ' <li>david</li>' +
+      ' <li>adam</li>' +
+      '</ul>'
+    ).appendTo('#qunit-fixture');
+    $('<select id="tc03" multiple data-jbond="type:array; items:number; bind:options">' +
+      ' <option value="10" selected>10</li>' +
+      ' <option value="20" selected>20</li>' +
+      ' <option value="30">30</li>' +
+      ' <option value="40" selected>40</li>' +
+      '</select>'
+    ).appendTo('#qunit-fixture');
+    $('<ul id="tc04" data-jbond="type:array;">' +
+      ' <li style="display:none" data-jbond="type:object;properties:id,label"><span></span><em></em></li>' +
+      ' <li data-jbond><span>19</span><em>kowalski</em></li>' +
+      ' <li data-jbond><span>21</span><em>polak</em></li>' +
+      ' <li data-jbond><span>37</span><em>smith</em></li>' +
+      '</ul>'
+    ).appendTo('#qunit-fixture');
+    $('<table><tbody id="tc05">' +
+      ' <tr style="display:none" data-jbond="type:object;properties:name,tags">' +
+      '   <td></td>' +
+      '   <td><ul data-jbond="type:array">' +
+      '     <li style="display:none"><a data-jbond="type:object;properties:href=string,label"><em></em></a></li>' +
+      '   </ul></td>' +
+      ' </tr>' +
+      ' <tr data-jbond>' +
+      '   <td>article1</td>' +
+      '   <td><ul data-jbond>' +
+      '     <li style="display:none"><a data-jbond></a></li>' +
+      '     <li><a data-jbond href="#tag1"><em>tag1</em></a></li>' +
+      '     <li><a data-jbond href="#tag2"><em>tag2</em></a></li>' +
+      '   </ul></td>' +
+      ' </tr>' +
+      '</tbody></table>'
+    ).appendTo('#qunit-fixture');
+
+    var composer = new jbond.TreeComposer();
+
+    composer.patch($('#tc01'), 'replace', '/value', 76);
+    assert.equal($('#tc01 li:nth(1)').text(), '76');
+
+    composer.patch($('#tc02'), 'replace', '/1', 'artur');
+    assert.equal($('#tc02 li:nth(1)').text(), 'john');
+    assert.equal($('#tc02 li:nth(2)').text(), 'artur');
+    assert.equal($('#tc02 li:nth(3)').text(), 'adam');
+
+    composer.patch($('#tc03'), 'replace', '/', [20, 40]);
+    assert.deepEqual($('#tc03').val(), ['20', '40']);
+
+    composer.patch($('#tc04'), 'replace', '/1/label', 'taylor');
+    assert.equal($('#tc04 li:nth(2) span').text(), '21');
+    assert.equal($('#tc04 li:nth(2) em').text(), 'taylor');
+
+    composer.patch($('#tc04'), 'replace', '/2/id', '13');
+    assert.equal($('#tc04 li:nth(3) span').text(), '13');
+    assert.equal($('#tc04 li:nth(3) em').text(), 'smith');
+
+    composer.patch($('#tc05'), 'replace', '/0/tags/0', {href: '#super', label: 'super'});
+    assert.equal($('#tc05 tr:nth(1) td:nth(1) li:nth(1) a').attr('href'), '#super');
+    assert.equal($('#tc05 tr:nth(1) td:nth(1) li:nth(1) a em').text(), 'super');
+
+    composer.patch($('#tc05'), 'replace', '/0/tags/1/label', 'news');
+    assert.equal($('#tc05 tr:nth(1) td:nth(1) li:nth(2) a em').text(), 'news');
+});
+

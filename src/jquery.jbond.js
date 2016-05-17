@@ -168,7 +168,7 @@ var jbond = (function($){
         if ($el.is('[type=number]')) {
             schema.type = 'number';
         }
-        if ($el.is('table,tbody,ul,ol')) {
+        if ($el.is('tbody,ul,ol')) {
             schema.type = 'array';
         }
 
@@ -224,14 +224,21 @@ var jbond = (function($){
                 schema.items = $.extend({$bind: 'default', type: 'string'}, schema.items);
             }
             else {
-                schema.items = this.jsonschema(this.find($el.children().first()));
+                var $tpl = $el.children(':first-child');
+                if($tpl.length < 1) {
+                    throw new SchemaError('array has to have at least one children');
+                }
+                schema.items = this.jsonschema(this.find($tpl));
             }
         }
         else if (schema.type == 'object') {
-            var $children = $el.children();
             for (var name in schema.properties) {
                 var property = schema.properties[name];
                 if ('$target' in property && schema.$bind == 'default') {
+                    var $children = $el.children();
+                    if ($children.length <= property.$target) {
+                        throw new SchemaError('not enough child elements for object');
+                    }
                     schema.properties[name] = $.extend(
                         property,
                         this.jsonschema(this.find($children.eq(property.$target)))
@@ -534,7 +541,9 @@ var jbond = (function($){
                     }
 
                     var $tpl = $el.children(':first-child');
-                    var items = $.extend(schema.items, this.jsonschema(this.find($tpl)));
+                    if (!schema.items) {
+                        schema.items = this.jsonschema(this.find($tpl));
+                    }
                     if (op == 'add') {
                         var ns = 'data-$ns'.replace('$ns', this.options.namespace);
                         var $new_el = $tpl.clone();
@@ -550,7 +559,7 @@ var jbond = (function($){
                     }
                     if ($.isNumeric(name)) {
                         var index = parseInt(name);
-                        return this.patch(this.find($children.eq(index)), op, subpath, value, items);
+                        return this.patch(this.find($children.eq(index)), op, subpath, value, schema.items);
                     }
                 }
                 if (schema.type == 'object' && schema.$bind == 'default') {
