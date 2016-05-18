@@ -14,6 +14,9 @@
     <!-- Bootstrap Core CSS -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
 
+    <!-- Hightlight.js -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.4.0/styles/default.min.css">
+
     <!-- Custom CSS -->
     <style>
     body {
@@ -31,10 +34,10 @@
 
 </head>
 
-<body>
+<body data-spy="scroll" data-target="#menu">
 
     <!-- Navigation -->
-    <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+    <nav id="menu" class="navbar navbar-default navbar-fixed-top" role="navigation">
         <div class="container">
             <!-- Brand and toggle get grouped for better mobile display -->
             <div class="navbar-header">
@@ -50,13 +53,13 @@
             <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                 <ul class="nav navbar-nav">
                     <li>
-                        <a href="#">About</a>
+                        <a href="#about">About</a>
                     </li>
                     <li>
-                        <a href="#">Services</a>
+                        <a href="#reference">Reference</a>
                     </li>
                     <li>
-                        <a href="#">Contact</a>
+                        <a href="#examples">Examples</a>
                     </li>
                 </ul>
             </div>
@@ -66,19 +69,305 @@
     </nav>
 
     <!-- Page Content -->
-    <div class="container">
-
+    <div id="about" class="container">
         <div class="row">
-            <div class="col-lg-12 text-center">
-                <h1>A Bootstrap Starter Template</h1>
-                <p class="lead">Complete with pre-defined file paths that you won't have to change!</p>
-                <ul class="list-unstyled">
-                    <li>Bootstrap v3.3.6</li>
-                    <li>jQuery v1.11.1</li>
-                </ul>
+            <div class="col-sm-12">
+                <h1>About</h1>
+                <hr>
+                <p class="lead">Work in progess. Please move on to examples.</p>
             </div>
         </div>
-        <!-- /.row -->
+    </div>
+
+    <div id="reference" class="container">
+        <div class="row">
+            <div class="col-sm-12">
+                <h1>Reference</h1>
+                <hr>
+<pre><code class="js">
+// Parse JSON from HTML form
+$('[data-jbond]').jbond('parse');
+
+// Update HTML from JSON
+$('[data-jbond]').jbond('compose', {email: 'jogn.smith@gmail.com', pasword: '123', rememberme: false});
+
+// Patch second element in arrray from JSON
+$('[data-jbond]').jbond('patch', 'replace', '/options/1/fee', 5);
+
+// Patch array
+$('[data-jbond]').jbond('patch', 'add', '/options', {id: 13, label: {}, fee: 21});
+$('[data-jbond]').jbond('patch', 'add', '/options/3', {id: 13, label: {}, fee: 21});
+$('[data-jbond]').jbond('patch', 'remove', '/options/5');
+</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <div id="examples" class="container">
+        <div class="row">
+            <div class="col-sm-12">
+                <h1>Examples</h1>
+                <hr>
+                <p class="lead">
+                Below you can find typical use cases for JBond library.
+                Feel free to play with form inputs and JSON representation. You should be able to observe how both panels are bond together.
+                Check out source code to notic how simple is to make this data binding. It requires defining only a few data-* attributes, after that
+                you can easy change HTML content and JSON data with only one method call.
+                </p>
+<pre><code class="js">
+$('.example .example-html').change(function(e){
+    var $example = $(e.currentTarget).closest('.example');
+    $example
+    .find('.example-json')
+    .val(JSON.stringify(
+        $example.find('.example-html').jbond('parse'),
+        null,
+        4
+    ));
+});
+$('.example .example-json').keyup(function(e){
+    var $example = $(e.currentTarget).closest('.example');
+    $example
+    .find('.example-html')
+    .jbond('compose', JSON.parse($example.find('.example-json').val()));
+});
+</code></pre>
+            </div>
+        </div>
+
+        <div class="row example">
+            <div class="col-sm-12">
+                <h3>Example #1: Simple sign in form</h3>
+                <hr>
+            </div>
+           <div class="col-sm-6">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <form data-jbond="type:object;properties:email,password,rememeber" id="example1" class="form form-horizontal example-html">
+                            <div class="form-group">
+                                <label for="email" class="col-sm-3 control-label">email:</label>
+                                <div class="col-sm-9">
+                                    <input data-jbond id="email" type="text" placeholder="email" value="john@world.org" class="form-control">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="passwd" class="col-sm-3 control-label">password:</label>
+                                <div class="col-sm-9">
+                                    <input data-jbond id="passwd" type="password" placeholder="password" value="qwerty" class="form-control">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-sm-9 col-sm-offset-3">
+                                    <div class="checkbox">
+                                        <label for="rememberme">
+                                            <input data-jbond="type:boolean" id="rememberme" type="checkbox" name="remember" checked>
+                                            rememeber me
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-sm-9 col-sm-offset-3">
+                                    <button class="btn btn-primary">Sign In</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <textarea rows="10" class="form-control example-json"></textarea>
+            </div>
+        </div>
+
+        <div class="row example">
+            <div class="col-sm-12">
+                <h3>Example #2: Complex order form</h3>
+                <hr>
+            </div>
+            <div class="col-sm-6">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <form data-jbond="type:object;properties:books,name,address,shipment,options" id="example2" class="form form-horizontal example-html">
+                            <div class="form-group">
+                                <label for="books" class="col-sm-3 control-label">books:</label>
+                                <div class="col-sm-9">
+                                    <fieldset id="books" data-jbond="type:array;items:string;bind:options">
+                                        <div class="checkbox">
+                                            <label>
+                                                <input data-jbond type="checkbox" value="The Pragmatic Programmer" checked>
+                                                <a href="#">The Pragmatic Programmer</a>
+                                            </label>
+                                        </div>
+                                        <div class="checkbox">
+                                            <label>
+                                                <input data-jbond type="checkbox" value="Clean Code">
+                                                <a href="#">Clean Code</a>
+                                            </label>
+                                        </div>
+                                         <div class="checkbox">
+                                            <label>
+                                                <input data-jbond type="checkbox" value="Programming Pearls" checked>
+                                                <a href="#">Programming Pearls</a>
+                                            </label>
+                                        </div>
+                                         <div class="checkbox">
+                                            <label>
+                                                <input data-jbond type="checkbox" value="Working Effectively with Legacy Code">
+                                                <a href="#">Working Effectively with Legacy Code</a>
+                                            </label>
+                                        </div>
+                                    </fieldset>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="name" class="col-sm-3 control-label">your name:</label>
+                                <div class="col-sm-9">
+                                    <input data-jbond id="name" placeholder="address" value="John Smith" class="form-control">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="address" class="col-sm-3 control-label">address:</label>
+                                <div class="col-sm-9">
+                                    <fieldset id="address" data-jbond="type:object;properties:street,city,country">
+                                        <div class="form-group">
+                                            <div class="col-sm-12">
+                                                <input data-jbond placeholder="street" value="Beverly Hills, 90210" class="form-control">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-sm-12">
+                                                <input data-jbond placeholder="city" value="Los Angeles, Hollywood" class="form-control">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-sm-12">
+                                                <select data-jbond="type:string;bind:options" class="form-control">
+                                                    <option value>country</option>
+                                                    <option value="pol">Poland</option>
+                                                    <option value="usa" selected>USA</option>
+                                                    <option value="ger">Germany</option>
+                                                    <option value="rus">Russia</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </fieldset>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="shipment" class="col-sm-3 control-label">shipment:</label>
+                                <div class="col-sm-9">
+                                    <fieldset data-jbond="type:string; bind:options">
+                                        <div class="radio">
+                                            <label>
+                                                <input name="shipment" type="radio" value="free" checked>
+                                                Free shipment (0$)
+                                            </label>
+                                        </div>
+                                        <div class="radio">
+                                            <label>
+                                                <input name="shipment" type="radio" value="paid">
+                                                Paid shipmnet (10$)
+                                            </label>
+                                        </div>
+                                         <div class="radio">
+                                            <label>
+                                                <input name="shipment" type="radio" value="extra">
+                                                Extra fast shipment (30$)
+                                            </label>
+                                        </div>
+                                    </fieldset>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="options" class="col-sm-3 control-label">options:</label>
+                                <div class="col-sm-9">
+                                    <fieldset data-jbond="type:array">
+                                        <div data-jbond="type:object;properties:id=string,label,fee" style="display:none" class="checkbox form-inline">
+                                            <label data-jbond="type:object;properties:enabled,name">
+                                                <input data-jbond="type:boolean" type="checkbox">
+                                                <span></span>
+                                            </label>
+                                            <input type="number" class="form-control"> $
+                                        </div>
+                                        <div data-jbond id="tip" class="checkbox form-inline">
+                                            <label data-jbond>
+                                                <input data-jbond type="checkbox">
+                                                <span>Give a tip</span>
+                                            </label>
+                                            <input type="number" class="form-control" value="2"> $
+                                        </div>
+                                        <div data-jbond id="charity" class="checkbox form-inline">
+                                            <label data-jbond>
+                                                <input data-jbond type="checkbox" checked>
+                                                <span>Charity</span>
+                                            </label>
+                                            <input type="number" class="form-control" value="3"> $
+                                        </div>
+                                    </fieldset>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-sm-9 col-sm-offset-3">
+                                    <button class="btn btn-primary">Buy</button>
+                                    <button class="btn btn-default">Back</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <textarea rows="28" class="form-control example-json"></textarea>
+            </div>
+        </div>
+
+        <div class="row example">
+            <div class="col-sm-12">
+                <h3>Example #3: Data table</h3>
+                <hr>
+            </div>
+            <div class="col-sm-6">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <table data-jbond="type:object;properties:legend,records" id="example3" class="table table-hover example-html">
+                            <thead>
+                                <tr data-jbond="type:array">
+                                    <th data-jbond="type:object;properties:id=string,label" style="display:none"><a href="#"></a></th>
+                                    <th data-jbond id="title"><a href="#">Title</a></th>
+                                    <th data-jbond id="author"><a href="#">Author</a></th>
+                                    <th data-jbond id="isbn"><a href="#">ISBN</a></th>
+                                    <th data-jbond id="cost"><a href="#">Cost</a></th>
+                                </tr>
+                            </thead>
+                            <tbody data-jbond="type:array">
+                                <tr data-jbond="type:object;properties:id=number,title,author,isbn,cost" id style="display:none">
+                                    <td></td><td></td><td></td><td></td>
+                                </tr>
+                                <tr data-jbond id="10">
+                                    <td>Clean Code</td><td>Robert C. Martin</td><td>978-0132350884</td><td>35$</td>
+                                </tr>
+                                <tr data-jbond id="20">
+                                    <td>The Pragmatic Programmer</td><td>Andrew Hunt</td><td>078-5342616224</td><td>35$</td>
+                                </tr>
+                                <tr data-jbond id="30">
+                                    <td>Programming Pearls</td><td>Jon Bentley</td><td>078-5342657883</td><td>23$</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <form>
+                    <div class="form-group">
+                        <textarea rows="20" class="form-control example-json"></textarea>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
 
     </div>
     <!-- /.container -->
@@ -91,6 +380,45 @@
 
     <!-- Bootstrap Core JavaScript -->
     <script src="js/bootstrap.min.js"></script>
+
+    <!-- Highlight.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.4.0/highlight.min.js"></script>
+
+    <!-- Custom Javascript -->
+    <script>
+        $(function(){
+            $('.example .example-html').change(function(e){
+                var $example = $(e.currentTarget).closest('.example');
+                $example
+                .find('.example-json')
+                .val(JSON.stringify(
+                    $example.find('.example-html').jbond('parse'),
+                    null,
+                    4
+                ));
+            });
+            $('.example .example-json').keyup(function(e){
+                var $example = $(e.currentTarget).closest('.example');
+                $example
+                .find('.example-html')
+                .jbond('compose', JSON.parse($example.find('.example-json').val()));
+            });
+            $('.example form').submit(function() { alert('Please don\'t go!'); return false; });
+            $('.example .example-html').change();
+
+            $('.example table th a').click(function(ev) {
+                var $tab = $(ev.currentTarget).closest('table');
+                var key = $(ev.currentTarget).closest('th').attr('id');
+                var records = $tab.children('tbody').jbond('parse');
+                records.sort(function(a,b) { return a[key] > b[key]; });
+                $tab.children('tbody').jbond('compose', records);
+                $tab.closest('.example').find('.example-json').val(JSON.stringify($tab.jbond('parse'), null, 4));
+                return false;
+            });
+
+            hljs.initHighlightingOnLoad();
+        });
+    </script>
 
 </body>
 
