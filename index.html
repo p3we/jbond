@@ -84,8 +84,7 @@
             <div class="col-sm-12">
                 <h1>Reference</h1>
                 <hr>
-<pre><code class="js">
-// Parse JSON from HTML form
+<pre><code class="js">// Parse JSON from HTML form
 $('[data-jbond]').jbond('parse');
 
 // Update HTML from JSON
@@ -114,16 +113,11 @@ $('[data-jbond]').jbond('patch', 'remove', '/options/5');
                 Check out source code to notic how simple is to make this data binding. It requires defining only a few data-* attributes, after that
                 you can easy change HTML content and JSON data with only one method call.
                 </p>
-<pre><code class="js">
-$('.example .example-html').change(function(e){
+<pre><code class="js">$('.example .example-html').change(function(e){
     var $example = $(e.currentTarget).closest('.example');
     $example
     .find('.example-json')
-    .val(JSON.stringify(
-        $example.find('.example-html').jbond('parse'),
-        null,
-        4
-    ));
+    .val(JSON.stringify($example.find('.example-html').jbond('parse')));
 });
 $('.example .example-json').keyup(function(e){
     var $example = $(e.currentTarget).closest('.example');
