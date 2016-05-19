@@ -403,10 +403,10 @@ $('.example .example-json').keyup(function(e){
             $('.example table th a').click(function(ev) {
                 var $tab = $(ev.currentTarget).closest('table');
                 var key = $(ev.currentTarget).closest('th').attr('id');
-                var records = $tab.children('tbody').jbond('parse');
-                records.sort(function(a,b) { return a[key] > b[key]; });
-                $tab.children('tbody').jbond('compose', records);
-                $tab.closest('.example').find('.example-json').val(JSON.stringify($tab.jbond('parse'), null, 4));
+                var data = $tab.jbond('parse');
+                data.records.sort(function(a,b) { return a[key] > b[key]; });
+                $tab.jbond('patch', 'replace', '/records', data.records);
+                $tab.closest('.example').find('.example-json').val(JSON.stringify(data, null, 4));
                 return false;
             });
 
