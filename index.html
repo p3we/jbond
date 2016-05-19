@@ -170,7 +170,12 @@ $('.example .example-json').keyup(function(e){
                 </div>
             </div>
             <div class="col-sm-6">
-                <textarea rows="10" class="form-control example-json"></textarea>
+                <form>
+                    <div class="form-group">
+                        <textarea rows="10" class="form-control example-json"></textarea>
+                    </div>
+                </form>
+
             </div>
         </div>
 
@@ -312,7 +317,11 @@ $('.example .example-json').keyup(function(e){
                 </div>
             </div>
             <div class="col-sm-6">
-                <textarea rows="28" class="form-control example-json"></textarea>
+                <form>
+                    <div class="form-group">
+                        <textarea rows="28" class="form-control example-json"></textarea>
+                    </div>
+                </form>
             </div>
         </div>
 
@@ -361,7 +370,73 @@ $('.example .example-json').keyup(function(e){
             </div>
         </div>
 
-
+        <div class="row example">
+            <div class="col-sm-12">
+                <h3>Example #4: Editable data table</h3>
+                <hr>
+            </div>
+           <div class="col-sm-6">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <div data-jbond="type:object;properties:form,records" id="example4" class="example-html">
+                            <form data-jbond="type:object;properties:id,name,amount,cost" class="form form-vertical">
+                                <div class="form-group hidden">
+                                    <input type="hidden">
+                                </div>
+                                <div class="form-group">
+                                    <label>name</label>
+                                    <input data-jbond type="text" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label>amount</label>
+                                    <input data-jbond type="number" value="1" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label>cost</label>
+                                    <input data-jbond type="number" value="2.00" step="0.1" class="form-control">
+                                </div>
+                                <button class="btn btn-primary">Create</button>
+                            </form>
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Actions</th>
+                                        <th>Name</th>
+                                        <th>Amount</th>
+                                        <th>Cost</th>
+                                    </tr>
+                                </thead>
+                                <tbody data-jbond="type:array">
+                                    <tr data-jbond="type:object;properties:id=string,actions,name,amount,cost" style="display:none">
+                                        <td data-jbond="type:null">
+                                            <button class="btn btn-info edit">Edit</button>
+                                            <button class="btn btn-danger delete">Delete</button>
+                                        </td>
+                                        <td></td>
+                                        <td data-jbond="type:number"></td>
+                                        <td data-jbond="type:number"></td>
+                                    </tr>
+                                    <tr id="13">
+                                        <td>
+                                            <button class="btn btn-info edit">Edit</button>
+                                            <button class="btn btn-danger delete">Delete</button>
+                                        </td>
+                                        <td>Snickers</td><td>3</td><td>2.99</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                       </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <form>
+                    <div class="form-group">
+                        <textarea rows="20" class="form-control example-json"></textarea>
+                    </div>
+                </form>
+            </div>
+        </div>
 
     </div>
     <!-- /.container -->
@@ -407,6 +482,31 @@ $('.example .example-json').keyup(function(e){
                 data.records.sort(function(a,b) { return a[key] > b[key]; });
                 $tab.jbond('patch', 'replace', '/records', data.records);
                 $tab.closest('.example').find('.example-json').val(JSON.stringify(data, null, 4));
+                return false;
+            });
+
+            $('.example #example4 form').unbind('submit').submit(function(ev) {
+                var $example = $(ev.currentTarget).closest('.example');
+                var $html = $example.find('.example-html');
+                var data = $html.jbond('parse');
+                $html.jbond('patch', 'add', '/records', data.form);
+                $html.find('.form').change().trigger('reset');
+                return false;
+            });
+            $('.example #example4').on('click', 'button.delete', function(ev) {
+                var $html = $(ev.currentTarget).closest('.example').find('.example-html');
+                var index = $(ev.currentTarget).closest('tr').index();
+                $html.jbond('patch', 'remove', '/records/'+(index-1));
+                $html.find('form').change();
+                return false;
+            });
+            $('.example #example4').on('click', 'button.edit', function(ev) {
+                var $example = $(ev.currentTarget).closest('.example');
+                var $html = $example.find('.example-html');
+                var index = $(ev.currentTarget).closest('tr').index();
+                var data = $html.jbond('parse');
+                $html.jbond('patch', 'replace', '/form', data.records[index-1]);
+                $html.change();
                 return false;
             });
 
