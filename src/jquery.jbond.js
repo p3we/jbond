@@ -349,7 +349,7 @@ var jbond = (function($){
             if ('$target' in property) {
                 if (schema.$bind == 'content') {
                     if (property.$target != 0) {
-                        throw new SchemaError('unbound property: ' + name);
+                        throw new SchemaError('more then one property for content bind method');
                     }
                     result[name] = $el.text();
                 }
@@ -418,7 +418,7 @@ var jbond = (function($){
                 });
             }
             else if ($el.is('fieldset:has(input[type=radio])')) {
-                $el.children('input[type=radio]').each(function(i, item){
+                $el.find('input[type=radio]').each(function(i, item){
                     var $item = $(item);
                     $item.prop('checked', $item.val() == value)
                 });
@@ -495,7 +495,7 @@ var jbond = (function($){
             if ('$target' in property) {
                 if (schema.$bind == 'content') {
                     if (property.$target != 0) {
-                        throw new SchemaError('unbound property: ' + name);
+                        throw new SchemaError('more then one property for content bind method');
                     }
                     $el.text(property_value);
                 }
@@ -623,16 +623,17 @@ var jbond = (function($){
                 var composer = new TreeComposer(arguments[2]);
                 return composer.patch(this, arguments[1], arguments[2], arguments[3], arguments[4]);
             default:
-                var tree = new RuleTree(arguments[1]);
-                return tree.jsonschema(this);
+                var rtree = new RuleTree(arguments[1]);
+                return rtree.jsonschema(this);
         }
     }
 
     return {
-        "RuleError": RuleError,
-        "SchemaError": SchemaError,
-        "RuleParser": RuleParser,
-        "TreeParser": TreeParser,
-        "TreeComposer": TreeComposer,
+        'RuleError': RuleError,
+        'SchemaError': SchemaError,
+        'RuleParser': RuleParser,
+        'RuleTree': RuleTree,
+        'TreeParser': TreeParser,
+        'TreeComposer': TreeComposer,
     };
 })(jQuery);

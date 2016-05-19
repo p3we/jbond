@@ -167,21 +167,21 @@ QUnit.test('parser test for array', function(assert) {
 
 QUnit.test('parser test for object', function(assert) {
     $('<ul id="tc01" data-jbond="type:object; properties:id,name">' +
-      '<li>1</li><li>FooBar</li>' +
+      ' <li>1</li><li>FooBar</li>' +
       '</ul>'
     ).appendTo('#qunit-fixture');
-    $('<ul id="tc02" title="2" data-jbond="type:object; properties:title=number,name; bind:content">' +
-      '<li>Test</li>' +
-      '</ul>'
+    $('<span id="tc02" title="2" data-jbond="type:object; properties:title=number,name; bind:content">' +
+      'Test' +
+      '</span>'
     ).appendTo('#qunit-fixture');
     $('<form id="tc03" data-jbond="type:object; properties:firstname,lastname">' +
-      '<div class="form-group"><input data-jbond value="Jan"></div>' +
-      '<div class="form-group"><input data-jbond value="Kowalski"></div>' +
+      ' <div class="form-group"><input data-jbond value="Jan"></div>' +
+      ' <div class="form-group"><input data-jbond value="Kowalski"></div>' +
       '</form>'
     ).appendTo('#qunit-fixture');
     $('<form id="tc04" data-jbond="type:object; properties:id,isvalid">' +
-      '<input data-jbond="type: number" type="hidden" value="89">' +
-      '<div><label>?</label><input data-jbond="type:boolean" type="checkbox" checked></div>' +
+      ' <input data-jbond="type: number" type="hidden" value="89">' +
+      ' <div><label>?</label><input data-jbond="type:boolean" type="checkbox" checked></div>' +
       '</form>'
     ).appendTo('#qunit-fixture');
 

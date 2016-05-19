@@ -25,6 +25,12 @@ QUnit.test('composer test for number', function(assert) {
     $('<span id="tc01" data-jbond="type:number"></span>').appendTo('#qunit-fixture');
     $('<span id="tc02" data-jbond="type:number;bind:attr=title"></span>').appendTo('#qunit-fixture');
     $('<input id="tc03" type="number" data-jbond="type:number">').appendTo('#qunit-fixture');
+    $('<fieldset id="tc04" data-jbond="type:string; bind:options">' +
+      ' <label><input name="tc04" type="radio" value="10"></label>' +
+      ' <label><input name="tc04" type="radio" value="20"></label>' +
+      ' <label><input name="tc04" type="radio" value="30" checked></label>' +
+      '</fieldset>'
+    ).appendTo('#qunit-fixture');
 
     var composer = new jbond.TreeComposer();
 
@@ -36,9 +42,10 @@ QUnit.test('composer test for number', function(assert) {
 
     composer.traverse($('#tc03'), 98);
     assert.equal($('#tc03').val(), 98);
+
+    composer.traverse($('#tc04'), 20);
+    assert.equal($('#tc04 :checked').val(), 20);
 });
-
-
 
 QUnit.test('composer test for array', function(assert) {
     $('<ul id="tc01" data-jbond="type:array; bind:default">' +

@@ -1,0 +1,16 @@
+{
+  "name": "jbond",
+  "version": "0.8.0",
+  "homepage": "http://p3we.github.io/jbond",
+  "license": "MIT",
+  "main": "src/jquery.jbond.js",
+  "dependencies": {
+    "jquery": "^2.2.3"
+  },
+  "devDependencies": {
+    "uglify-js": "^2.6.2"
+  },
+  "scripts": {
+  	"build": "uglifyjs -c -m -p 1 --source-map dist/jquery.jbond.min.map -o dist/jquery.jbond.min.js src/jquery.jbond.js"
+  }
+}

@@ -11,10 +11,18 @@ QUnit.test('test jsonschema', function(assert) {
       ' </ul>' +
       '</div>'
     ).appendTo('#qunit-fixture');
+    $('<ul id="tc02" data-jbond="type:array">' +
+      '  <li data-jbond="type:object;properties:id=number,value;bind:content" style="display:none">' +
+      '  </li>' +
+      '  <li data-jbond id="5">cola</li>' +
+      '  <li data-jbond id="6">pepsi</li>' +
+      '</ul>'
+    ).appendTo('#qunit-fixture');
 
-    var parser = new jbond.TreeParser();
+    var rtree = new jbond.RuleTree();
+
     assert.deepEqual(
-        parser.jsonschema($('#tc01')),
+        rtree.jsonschema($('#tc01')),
         {
             $bind: 'default',
             type:'object',
@@ -64,6 +72,29 @@ QUnit.test('test jsonschema', function(assert) {
             }
         },
         'wrong json schema'
+    );
+
+    assert.deepEqual(
+        rtree.jsonschema($('#tc02')),
+        {
+            'type': 'array',
+            '$bind': 'default',
+            'items': {
+                'type': 'object',
+                '$bind': 'content',
+                'properties': {
+                    'id': {
+                        'type': 'number',
+                        '$bind': 'attr=id'
+                    },
+                    'value': {
+                        'type': 'string',
+                        '$target': 0
+                    }
+                }
+            }
+        },
+        'wrong JSON schema'
     );
 });
 
