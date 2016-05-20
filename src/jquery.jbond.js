@@ -1,4 +1,6 @@
 /**
+ * TODO:
+ * [F] must implement "get" method for parser (similar to patch)
  */
 var jbond = (function($){
     /**
@@ -85,7 +87,6 @@ var jbond = (function($){
                 if (prop_params.length>1) {
                     properties[prop_name] = {
                         'type': prop_params[1].trim(),
-                        '$bind': 'attr='+prop_name
                     };
                 }
                 else {
@@ -140,7 +141,7 @@ var jbond = (function($){
                     }
                 }
             }
-            if ('$bind' in rule && !rule.$bind.match(/^(default|content)$/)) {
+            if ('$bind' in rule && !rule.$bind.match(/^(default|content|options)$/)) {
                 throw new RuleError('bind method not allowed');
             }
         }
@@ -251,7 +252,70 @@ var jbond = (function($){
         }
         return schema;
     }
+    /**
+     * Resolve given path in context of rule tree.
+     */
+    RuleTree.prototype.resolve = function($el, path, callback, schema) {
+        var callback = callback || function($el, path, schema) { return (path == null); }
+        var schema = schema || this.rule($el);
 
+        if (typeof path == 'string' && path.indexOf('/') == 0) {
+            var pieces = path.split('/');
+            if (pieces.length > 1 && pieces[1].length) {
+                var name = pieces[1];
+                var subpath = '/' + path.substring(2 + name.length);
+                if (schema.type == 'array') {
+                    if (schema.$bind == 'options') {
+                        return callback.call(this, $el, null, schema);
+                    }
+                    else {
+                        if($el.children().length < 1) {
+                            throw new SchemaError('array has to have at least one children');
+                        }
+                        if (callback.call(this, $el, subpath, schema)) {
+                            return true;
+                        }
+                        if ($.isNumeric(name)) {
+                            var $child = $el.children(':nth('+name+')').next();
+                            if (!schema.items) {
+                                schema.items = this.jsonschema(this.find($el.children(':first-child')));
+                            }
+                            if ($child.length) {
+                                return this.resolve(this.find($child), subpath, callback, schema.items);
+                            }
+                        }
+                    }
+                }
+                if (schema.type == 'object') {
+                    if (name in schema.properties) {
+                        var property = schema.properties[name];
+                        if ('$target' in property && schema.$bind == 'default') {
+                            var $child = $el.children(':nth(' + property.$target + ')');
+                            if (callback.call(this, $child, subpath, schema)) {
+                                return true;
+                            }
+                            if ($child.length) {
+                                if ('$bind' in property) {
+                                    return this.resolve(this.find($child), subpath, callback, property);
+                                }
+                                else {
+                                    return this.resolve(this.find($child), subpath, callback);
+                                }
+                            }
+                        }
+                        else if (callback.call(this, $el, null, property)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            else {
+                return callback.call(this, $el, null, schema);
+            }
+        }
+
+        return false;
+    }
     /**
      * Parse DOM tree to create JSON data
      */
@@ -355,18 +419,30 @@ var jbond = (function($){
                 }
                 else {
                     var $child = this.find($children.eq(property.$target));
-                    if ('$bind' in property) {
-                        result[name] = this.visit($child, property);
-                    }
-                    else {
-                        result[name] = this.traverse($child);
+                    var value = ('$bind' in property) ? this.visit($child, property) : this.traverse($child);
+                    if (value != null) {
+                        result[name] = value;
                     }
                 }
             }
             else {
-                result[name] = this.visit($el, property);
+                result[name] = this.visit($el, $.extend(property, {'$bind': 'attr=' + name}));
             }
         }
+        return result;
+    }
+    /**
+     * Return value found under path.
+     */
+    TreeParser.prototype.get = function($el, path) {
+        var result = null;
+        this.resolve($el, path, function($el, path, schema) {
+            if (path == null) {
+                result = this.visit($el, schema);
+                return true;
+            }
+            return false;
+        });
         return result;
     }
 
@@ -488,7 +564,6 @@ var jbond = (function($){
      * Parse object based on schema. If schema is unavailable, traverse DOM.
      */
     TreeComposer.prototype.visitObject = function($el, schema, value) {
-        var $children = $el.children();
         for (var name in schema.properties) {
             var property = schema.properties[name];
             var property_value = (value && name in value) ? value[name] : null;
@@ -500,7 +575,7 @@ var jbond = (function($){
                     $el.text(property_value);
                 }
                 else {
-                    var $child = this.find($children.eq(property.$target));
+                    var $child = this.find($el.children(':nth(' + property.$target + ')'));
                     if ('$bind' in property) {
                         this.visit($child, property, property_value);
                     }
@@ -510,7 +585,7 @@ var jbond = (function($){
                 }
             }
             else {
-                this.visit($el, property, property_value);
+                this.visit($el, $.extend(property, {'$bind': 'attr=' + name}), property_value);
             }
         }
     }
@@ -518,76 +593,56 @@ var jbond = (function($){
      * Patch element tree with value
      * Supported operations: add (type:array), remove (type:array), replace
      */
-    TreeComposer.prototype.patch = function($el, op, path, value, schema) {
-        // if it is array element, schema have to be provided
-        if (!schema) {
-            var schema = this.rule($el);
+    TreeComposer.prototype.patch = function($el, op, path, value) {
+        var result = false;
+        if (op == 'replace') {
+            result = this.resolve($el, path, function($el, path, schema){
+                if (path == null) {
+                    this.visit($el, schema, value);
+                    return true;
+                }
+                return false;
+            });
         }
-
-        if (typeof path == 'string' && path.indexOf('/') == 0) {
-            var pieces = path.split('/');
-            if (pieces.length > 1 && (pieces[1].length || op == 'add')) {
-                var name = pieces[1];
-                var subpath = '/' + path.substring(2 + name.length);
-                if (schema.type == 'array' && schema.$bind == 'default') {
-                    if($el.children().length < 1) {
-                        throw new Error('array has to have at least one children');
-                    }
-
-                    var $children = $el.children(':not(:first-child)');
-                    if (op == 'remove' && $.isNumeric(name)) {
-                        $children.eq(parseInt(name)).remove()
-                        return;
-                    }
-
+        else if (op == 'add') {
+            result = this.resolve($el, path, function($el, path, schema){
+                if (path == null || $.isNumeric(path.substring(1))) {
+                    var ns = 'data-$ns'.replace('$ns', this.options.namespace);
+                    var name = (path || '/').substring(1);
                     var $tpl = $el.children(':first-child');
                     if (!schema.items) {
                         schema.items = this.jsonschema(this.find($tpl));
                     }
-                    if (op == 'add') {
-                        var ns = 'data-$ns'.replace('$ns', this.options.namespace);
-                        var $new_el = $tpl.clone();
-                        $new_el.removeAttr('disabled').removeAttr('hidden').show();
-                        $new_el.find('*').add($new_el).filter('['+ns+']').attr(ns, '');
-                        if ($.isNumeric(name)) {
-                            $children.eq(parseInt(name)).before($new_el);
-                        }
-                        else {
-                            $el.append($new_el);
-                        }
-                        return this.visit($new_el, schema.items, value);
-                    }
+
+                    var $new_el = $tpl.clone();
+                    $new_el.removeAttr('disabled').removeAttr('hidden').show();
+                    $new_el.find('*').add($new_el).filter('['+ns+']').attr(ns, '');
                     if ($.isNumeric(name)) {
-                        var index = parseInt(name);
-                        return this.patch(this.find($children.eq(index)), op, subpath, value, schema.items);
+                        $el.children(':not(:first-child)').eq(parseInt(name)).before($new_el);
                     }
-                }
-                if (schema.type == 'object' && schema.$bind == 'default') {
-                    if (name in schema.properties) {
-                        var property = schema.properties[name];
-                        if ('$target' in property) {
-                            var $child = $el.children().eq(property.$target);
-                            if ('$bind' in property) {
-                                return this.patch(this.find($child), op, subpath, value, property);
-                            }
-                            else {
-                                return this.patch(this.find($child), op, subpath, value);
-                            }
-                        }
+                    else {
+                        $el.append($new_el);
                     }
+                    this.visit(this.find($new_el), schema.items, value);
+
+                    return true;
                 }
-                throw new Error('unresolved path: ' + path);
-            }
-            else {
-                if (op == 'replace') {
-                    return this.visit($el, schema, value);
+                return false;
+            });
+        }
+        else if (op == 'remove') {
+            result = this.resolve($el, path, function($el, path, schema){
+                if (path == null) {
+                    $el.remove();
+                    return true;
                 }
-                throw new Error('wrong patch operation: ' + op + ' for type: ' + schema.type);
-            }
+                return false;
+            });
         }
         else {
-            throw new Error('wrong path: ' + path);
+            throw new Error('unknown patch operation: ' + op);
         }
+        return result;
     }
 
     /**
@@ -615,13 +670,22 @@ var jbond = (function($){
         switch(method) {
             case 'parse':
                 var parser = new TreeParser(arguments[1]);
-                return parser.traverse(this);
+                return parser.traverse(this.first());
+            case 'get':
+                var parser = new TreeParser(arguments[2]);
+                return parser.get(this.first(), arguments[1]);
             case 'compose':
                 var composer = new TreeComposer(arguments[2]);
-                return composer.traverse(this, arguments[1]);
+                var value = arguments[1];
+                return this.each(function(){
+                    composer.traverse($(this), value);
+                });
             case 'patch':
-                var composer = new TreeComposer(arguments[2]);
-                return composer.patch(this, arguments[1], arguments[2], arguments[3], arguments[4]);
+                var composer = new TreeComposer(arguments[4]);
+                var op = arguments[1], path = arguments[2], value = arguments[3];
+                return this.each(function(){
+                    return composer.patch($(this), op, path, value);
+                });
             default:
                 var rtree = new RuleTree(arguments[1]);
                 return rtree.jsonschema(this);

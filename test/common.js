@@ -85,7 +85,6 @@ QUnit.test('test jsonschema', function(assert) {
                 'properties': {
                     'id': {
                         'type': 'number',
-                        '$bind': 'attr=id'
                     },
                     'value': {
                         'type': 'string',

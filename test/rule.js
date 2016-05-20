@@ -92,7 +92,7 @@ QUnit.test('rule items and properties test', function(assert) {
         rule.parse('type:object; properties:value=number,label; bind:content'),
         {
             type: 'object',
-            properties: {value: {type: 'number', $bind: 'attr=value'}, label: {$target: 0}},
+            properties: {value: {type: 'number'}, label: {$target: 0}},
             $bind: 'content'
         },
         'wrong propetries for provided rule'
@@ -135,7 +135,7 @@ QUnit.test('rule bind test', function(assert) {
         rule.parse('type:object; properties:id=number,name; bind:default'),
         {
             type: 'object',
-            properties: {id: {type: 'number', $bind: 'attr=id'}, name: {$target: 0}},
+            properties: {id: {type: 'number'}, name: {$target: 0}},
             $bind: 'default'
         },
         'wrong bind method for provided rule'
