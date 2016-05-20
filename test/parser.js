@@ -101,9 +101,9 @@ QUnit.test('parser test for array', function(assert) {
     ).appendTo('#qunit-fixture');
     $('<ul id="tc03" data-jbond="type:array">' +
       '<li data-jbond="type:object; properties:id=number,label"><p data-jbond="type:string">a</p></li>' +
-      '<li id="2"><p>item1</p></li>' +
-      '<li id="4"><p>item2</p></li>' +
-      '<li id="6"><p>item3</p></li>' +
+      '<li data-jbond id="2"><p data-jbond>item1</p></li>' +
+      '<li data-jbond id="4"><p data-jbond>item2</p></li>' +
+      '<li data-jbond id="6"><p data-jbond>item3</p></li>' +
       '</ul>'
     ).appendTo('#qunit-fixture');
     $('<ul id="tc04" data-jbond="type:array">' +
@@ -122,6 +122,15 @@ QUnit.test('parser test for array', function(assert) {
       '<label><input type="checkbox" value="26" checked></label>' +
       '<label><input type="checkbox" value="36" checked></label>' +
       '</fieldset>'
+    ).appendTo('#qunit-fixture');
+    $('<table><tbody id="tc07">' +
+      '<tr data-jbond="type:object;properties:action,task">' +
+      '<td data-jbond="type:number"></td><td data-jbond="type:string"></td>' +
+      '</tr>' +
+      '<tr data-jbond>' +
+      '<td data-jbond>12</td><td data-jbond>running</td>' +
+      '</tr>' +
+      '</tbody></table>'
     ).appendTo('#qunit-fixture');
 
     var parser = new jbond.TreeParser();
@@ -161,6 +170,11 @@ QUnit.test('parser test for array', function(assert) {
     assert.deepEqual(
         parser.traverse($('#tc06')),
         [26, 36],
+        'wrong array value'
+    );
+    assert.deepEqual(
+        parser.traverse($('#tc07')),
+        [{action: 12, task: 'running'}],
         'wrong array value'
     );
 });
