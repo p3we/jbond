@@ -222,4 +222,77 @@ QUnit.test('parser test for object', function(assert) {
     );
 });
 
+QUnit.test('parser test for get method', function(assert) {
+    $('<div id="tc01" data-jbond="type:object;properties:people,perms">' +
+      ' <ul data-jbond>' +
+      '  <li data-jbond="type:object;properties:id=number,first,last">'+
+      '    <span></span><span></span>'+
+      '  </li>' +
+      '  <li data-jbond id="56">'+
+      '    <span>Jan</span><span>Kowalski</span>'+
+      '  </li>' +
+      '  <li data-jbond id="57">'+
+      '    <span>Piotr</span><span>Nowak</span>'+
+      '  </li>' +
+      ' </ul>' +
+      ' <ul data-jbond="type:object;properties:read,write,execute">' +
+      '  <li data-jbond="type:boolean">true</li>' +
+      '  <li data-jbond="type:boolean">false</li>' +
+      '  <li data-jbond="type:boolean">false</li>' +
+      ' </ul>' +
+      '</div>'
+    ).appendTo('#qunit-fixture');
+    $('<table><tbody id="tc02" data-jbond>' +
+      ' <tr data-jbond="type:object;properties:exists,name,type,perms">' +
+      '  <td><input data-jbond="type:boolean" type="checkbox"></td>' +
+      '  <td><span data-jbond="type:object;properties:filename;bind:content"></span></td>' +
+      '  <td><fieldset data-jbond="type:string;bind:options">' +
+      '   <label><input type="radio" name="tc02" value="pdf checked">pdf</label>' +
+      '   <label><input type="radio" name="tc02" value="txt">txt</label>' +
+      '   <label><input type="radio" name="tc02" value="doc">doc</label>' +
+      '  </fieldset></td>' +
+      '  <td><select data-jbond="type:array;bind:options" multiple>' +
+      '   <option value="read" selected>Read</option>' +
+      '   <option value="write" selected>Write</option>' +
+      '   <option value="execute">Execute</option>' +
+      '  </select></td>' +
+      ' </tr>' +
+      ' <tr data-jbond>' +
+      '  <td><input data-jbond type="checkbox" checked></td>' +
+      '  <td><span data-jbond>example.pdf</span></td>' +
+      '  <td><fieldset data-jbond>' +
+      '   <label><input type="radio" name="tc02" value="pdf" checked>pdf</label>' +
+      '   <label><input type="radio" name="tc02" value="txt">txt</label>' +
+      '   <label><input type="radio" name="tc02" value="doc">doc</label>' +
+      '  </fieldset></td>' +
+      '  <td><select data-jbond multiple>' +
+      '   <option value="read" selected>Read</option>' +
+      '   <option value="write" selected>Write</option>' +
+      '   <option value="execute">Execute</option>' +
+      '  </select></td>' +
+      ' </tr>' +
+      '</tbody></table>'
+    ).appendTo('#qunit-fixture');
+
+    var parser = new jbond.TreeParser();
+
+    assert.deepEqual(parser.get($('#tc01'), '/people/0/id'), 56);
+    assert.deepEqual(parser.get($('#tc01'), '/people/0/first'), 'Jan');
+    assert.deepEqual(parser.get($('#tc01'), '/people/0/last'), 'Kowalski');
+    assert.deepEqual(parser.get($('#tc01'), '/people/1/id'), 57);
+    assert.deepEqual(parser.get($('#tc01'), '/people/1/first'), 'Piotr');
+    assert.deepEqual(parser.get($('#tc01'), '/people/1/last'), 'Nowak');
+    assert.deepEqual(parser.get($('#tc01'), '/perms'), {read: true, write: false, execute: false});
+    assert.deepEqual(parser.get($('#tc01'), '/perms/read'), true);
+    assert.deepEqual(parser.get($('#tc01'), '/perms/write'), false);
+    assert.deepEqual(parser.get($('#tc01'), '/perms/execute'), false);
+    assert.deepEqual(parser.get($('#tc01'), '/unknown'), null);
+
+    assert.deepEqual(parser.get($('#tc02'), '/0/exists'), true);
+    assert.deepEqual(parser.get($('#tc02'), '/0/name'), {filename: 'example.pdf'});
+    assert.deepEqual(parser.get($('#tc02'), '/0/name/filename'), 'example.pdf');
+    assert.deepEqual(parser.get($('#tc02'), '/0/type'), 'pdf');
+    assert.deepEqual(parser.get($('#tc02'), '/0/perms'), ['read', 'write']);
+    assert.deepEqual(parser.get($('#tc02'), '/3'), null);
+});
 

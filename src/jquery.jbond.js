@@ -1,7 +1,3 @@
-/**
- * TODO:
- * [F] must implement "get" method for parser (similar to patch)
- */
 var jbond = (function($){
     /**
      * Exception throw by RuleParser on parse error
@@ -78,7 +74,7 @@ var jbond = (function($){
      * Parse properties parameter, finds attribute type or target child
      */
     RuleParser.prototype.parseProperties = function(spec) {
-        var self = this, parameters = spec.split(','), index = 0, properties = {};
+        var parameters = spec.split(','), index = 0, properties = {};
         $.each(parameters, function(i, item){
             var property = item.trim();
             if (property.length>0) {
@@ -207,7 +203,7 @@ var jbond = (function($){
         case 'string': result = this.visitString.apply(this, arguments); break;
         case 'array': result = this.visitArray.apply(this, arguments); break;
         case 'object': result = this.visitObject.apply(this, arguments); break;
-        default: throw new SchemaError('unknown type: ' + schema.type); break;
+        default: throw new SchemaError('unknown type: ' + schema.type);
         }
         return result;
     }
@@ -266,7 +262,7 @@ var jbond = (function($){
                 var subpath = '/' + path.substring(2 + name.length);
                 if (schema.type == 'array') {
                     if (schema.$bind == 'options') {
-                        return callback.call(this, $el, null, schema);
+                        return callback.call(this, $el, (path == '/') ? null : subpath, schema);
                     }
                     else {
                         if($el.children().length < 1) {
@@ -289,22 +285,27 @@ var jbond = (function($){
                 if (schema.type == 'object') {
                     if (name in schema.properties) {
                         var property = schema.properties[name];
-                        if ('$target' in property && schema.$bind == 'default') {
-                            var $child = $el.children(':nth(' + property.$target + ')');
-                            if (callback.call(this, $child, subpath, schema)) {
-                                return true;
+                        if ('$target' in property) {
+                            if (schema.$bind == 'content') {
+                                return callback.call(this, $el, null, $.extend(property, {'type': 'string', '$bind': 'default'}));
                             }
-                            if ($child.length) {
-                                if ('$bind' in property) {
-                                    return this.resolve(this.find($child), subpath, callback, property);
+                            else {
+                                var $child = $el.children(':nth(' + property.$target + ')');
+                                if (callback.call(this, $child, subpath, schema)) {
+                                    return true;
                                 }
-                                else {
-                                    return this.resolve(this.find($child), subpath, callback);
+                                if ($child.length) {
+                                    if ('$bind' in property) {
+                                        return this.resolve(this.find($child), subpath, callback, property);
+                                    }
+                                    else {
+                                        return this.resolve(this.find($child), subpath, callback);
+                                    }
                                 }
                             }
                         }
-                        else if (callback.call(this, $el, null, property)) {
-                            return true;
+                        else {
+                            return callback.call(this, $el, null, $.extend(property, {'$bind': 'attr=' + name}));
                         }
                     }
                 }
@@ -415,7 +416,7 @@ var jbond = (function($){
                     if (property.$target != 0) {
                         throw new SchemaError('more then one property for content bind method');
                     }
-                    result[name] = $el.text();
+                    result[name] = this.visit($el, $.extend(property, {'type': 'string', '$bind': 'default'}));
                 }
                 else {
                     var $child = this.find($children.eq(property.$target));
@@ -451,6 +452,7 @@ var jbond = (function($){
     }
     TreeComposer.prototype = Object.create(RuleTree.prototype);
     TreeComposer.prototype.constructor = TreeComposer;
+
     /**
      * Handle null type.
      */
@@ -572,7 +574,7 @@ var jbond = (function($){
                     if (property.$target != 0) {
                         throw new SchemaError('more then one property for content bind method');
                     }
-                    $el.text(property_value);
+                    this.visit($el, $.extend(property, {'type': 'string', '$bind': 'default'}), property_value);
                 }
                 else {
                     var $child = this.find($el.children(':nth(' + property.$target + ')'));
@@ -606,25 +608,21 @@ var jbond = (function($){
         }
         else if (op == 'add') {
             result = this.resolve($el, path, function($el, path, schema){
-                if (path == null || $.isNumeric(path.substring(1))) {
-                    var ns = 'data-$ns'.replace('$ns', this.options.namespace);
-                    var name = (path || '/').substring(1);
-                    var $tpl = $el.children(':first-child');
+                if ((schema.type == 'array' && path == null) || $.isNumeric(path.substring(1))) {
+                    var name = path || '/', $tpl = $el.children(':first-child');
+                    var $new_el = $tpl.clone(), ns = 'data-$ns'.replace('$ns', this.options.namespace);
                     if (!schema.items) {
                         schema.items = this.jsonschema(this.find($tpl));
                     }
-
-                    var $new_el = $tpl.clone();
                     $new_el.removeAttr('disabled').removeAttr('hidden').show();
                     $new_el.find('*').add($new_el).filter('['+ns+']').attr(ns, '');
-                    if ($.isNumeric(name)) {
-                        $el.children(':not(:first-child)').eq(parseInt(name)).before($new_el);
+                    if ($.isNumeric(name.substring(1))) {
+                        $el.children(':not(:first-child)').eq(parseInt(name.substring(1))).before($new_el);
                     }
                     else {
                         $el.append($new_el);
                     }
                     this.visit(this.find($new_el), schema.items, value);
-
                     return true;
                 }
                 return false;

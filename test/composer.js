@@ -153,30 +153,30 @@ QUnit.test('composer test for patch replace method', function(assert) {
 
     var composer = new jbond.TreeComposer();
 
-    composer.patch($('#tc01'), 'replace', '/value', 76);
+    assert.ok(composer.patch($('#tc01'), 'replace', '/value', 76));
     assert.equal($('#tc01 li:nth(1)').text(), '76');
 
-    composer.patch($('#tc02'), 'replace', '/1', 'artur');
+    assert.ok(composer.patch($('#tc02'), 'replace', '/1', 'artur'));
     assert.equal($('#tc02 li:nth(1)').text(), 'john');
     assert.equal($('#tc02 li:nth(2)').text(), 'artur');
     assert.equal($('#tc02 li:nth(3)').text(), 'adam');
 
-    composer.patch($('#tc03'), 'replace', '/', [20, 40]);
+    assert.ok(composer.patch($('#tc03'), 'replace', '/', [20, 40]));
     assert.deepEqual($('#tc03').val(), ['20', '40']);
 
-    composer.patch($('#tc04'), 'replace', '/1/label', 'taylor');
+    assert.ok(composer.patch($('#tc04'), 'replace', '/1/label', 'taylor'));
     assert.equal($('#tc04 li:nth(2) span').text(), '21');
     assert.equal($('#tc04 li:nth(2) em').text(), 'taylor');
 
-    composer.patch($('#tc04'), 'replace', '/2/id', '13');
+    assert.ok(composer.patch($('#tc04'), 'replace', '/2/id', '13'));
     assert.equal($('#tc04 li:nth(3) span').text(), '13');
     assert.equal($('#tc04 li:nth(3) em').text(), 'smith');
 
-    composer.patch($('#tc05'), 'replace', '/0/tags/0', {href: '#super', label: 'super'});
+    assert.ok(composer.patch($('#tc05'), 'replace', '/0/tags/0', {href: '#super', label: 'super'}));
     assert.equal($('#tc05 tr:nth(1) td:nth(1) li:nth(1) a').attr('href'), '#super');
     assert.equal($('#tc05 tr:nth(1) td:nth(1) li:nth(1) a em').text(), 'super');
 
-    composer.patch($('#tc05'), 'replace', '/0/tags/1/label', 'news');
+    assert.ok(composer.patch($('#tc05'), 'replace', '/0/tags/1/label', 'news'));
     assert.equal($('#tc05 tr:nth(1) td:nth(1) li:nth(2) a em').text(), 'news');
 });
 
@@ -197,15 +197,15 @@ QUnit.test('composer test for patch add and remove methods', function(assert) {
 
     assert.equal($('#tc01 ul > li:not(:first-child)').length, 4);
 
-    composer.patch($('#tc01'), 'add', '/friends', 'friend5');
+    assert.ok(composer.patch($('#tc01'), 'add', '/friends', 'friend5'));
     assert.equal($('#tc01 ul > li:not(:first-child)').length, 5);
     assert.equal($('#tc01 ul > li:nth(5)').text(), 'friend5');
 
-    composer.patch($('#tc01'), 'add', '/friends/1', 'stranger');
+    assert.ok(composer.patch($('#tc01'), 'add', '/friends/1', 'stranger'));
     assert.equal($('#tc01 ul > li:not(:first-child)').length, 6);
     assert.equal($('#tc01 ul > li:nth(2)').text(), 'stranger');
 
-    composer.patch($('#tc01'), 'remove', '/friends/1', 'stranger');
+    assert.ok(composer.patch($('#tc01'), 'remove', '/friends/1', 'stranger'));
     assert.equal($('#tc01 ul > li:not(:first-child)').length, 5);
     assert.equal($('#tc01 ul > li:nth(2)').text(), 'friend2');
 });
