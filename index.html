@@ -403,12 +403,12 @@ $('.example .example-json').keyup(function(e){
                                         <td></td>
                                         <td data-jbond="type:boolean"></td>
                                     </tr>
-                                    <tr>
-                                        <td>
+                                    <tr data-jbond>
+                                        <td data-jbond>
                                             <button class="btn btn-info done">Done</button>
                                         </td>
-                                        <td>Run Unit Tests</td>
-                                        <td>false</td>
+                                        <td data-jbond>Run Unit Tests</td>
+                                        <td data-jbond>false</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -463,8 +463,8 @@ $('.example .example-json').keyup(function(e){
             $('.example .example-html').change();
 
             $('.example table th a').click(function(ev) {
-                var $tab = $(ev.currentTarget).closest('table');
                 var key = $(ev.currentTarget).closest('th').attr('id');
+                var $tab = $(ev.currentTarget).closest('.example-html');
                 var data = $tab.jbond('parse');
                 data.records.sort(function(a,b) { return a[key] > b[key]; });
                 $tab.jbond('patch', 'replace', '/records', data.records);
