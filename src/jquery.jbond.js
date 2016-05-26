@@ -137,7 +137,7 @@ var jbond = (function($){
                     }
                 }
             }
-            if ('$bind' in rule && !rule.$bind.match(/^(default|content|options)$/)) {
+            if ('$bind' in rule && !rule.$bind.match(/^(default|content)$/)) {
                 throw new RuleError('bind method not allowed');
             }
         }

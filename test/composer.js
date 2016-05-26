@@ -137,15 +137,15 @@ QUnit.test('composer test for patch replace method', function(assert) {
       ' <tr style="display:none" data-jbond="type:object;properties:name,tags">' +
       '   <td></td>' +
       '   <td><ul data-jbond="type:array">' +
-      '     <li style="display:none"><a data-jbond="type:object;properties:href=string,label"><em></em></a></li>' +
+      '     <li style="display:none"><a data-jbond="type:object;properties:href=string,label;bind:content"></a></li>' +
       '   </ul></td>' +
       ' </tr>' +
       ' <tr data-jbond>' +
       '   <td>article1</td>' +
       '   <td><ul data-jbond>' +
       '     <li style="display:none"><a data-jbond></a></li>' +
-      '     <li><a data-jbond href="#tag1"><em>tag1</em></a></li>' +
-      '     <li><a data-jbond href="#tag2"><em>tag2</em></a></li>' +
+      '     <li><a data-jbond href="#tag1">tag1</a></li>' +
+      '     <li><a data-jbond href="#tag2">tag2</a></li>' +
       '   </ul></td>' +
       ' </tr>' +
       '</tbody></table>'
@@ -163,6 +163,7 @@ QUnit.test('composer test for patch replace method', function(assert) {
 
     assert.ok(composer.patch($('#tc03'), 'replace', '/', [20, 40]));
     assert.deepEqual($('#tc03').val(), ['20', '40']);
+    assert.notOk(composer.patch($('#tc03'), 'replace', '/1', 30));
 
     assert.ok(composer.patch($('#tc04'), 'replace', '/1/label', 'taylor'));
     assert.equal($('#tc04 li:nth(2) span').text(), '21');
@@ -174,10 +175,12 @@ QUnit.test('composer test for patch replace method', function(assert) {
 
     assert.ok(composer.patch($('#tc05'), 'replace', '/0/tags/0', {href: '#super', label: 'super'}));
     assert.equal($('#tc05 tr:nth(1) td:nth(1) li:nth(1) a').attr('href'), '#super');
-    assert.equal($('#tc05 tr:nth(1) td:nth(1) li:nth(1) a em').text(), 'super');
+    assert.equal($('#tc05 tr:nth(1) td:nth(1) li:nth(1) a').text(), 'super');
 
+    assert.ok(composer.patch($('#tc05'), 'replace', '/0/tags/1/href', '#news'));
+    assert.equal($('#tc05 tr:nth(1) td:nth(1) li:nth(2) a').attr('href'), '#news');
     assert.ok(composer.patch($('#tc05'), 'replace', '/0/tags/1/label', 'news'));
-    assert.equal($('#tc05 tr:nth(1) td:nth(1) li:nth(2) a em').text(), 'news');
+    assert.equal($('#tc05 tr:nth(1) td:nth(1) li:nth(2) a').text(), 'news');
 });
 
 QUnit.test('composer test for patch add and remove methods', function(assert) {
